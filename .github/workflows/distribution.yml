@@ -40,12 +40,38 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Install Flatpak tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+      
       - name: Build Flatpak
-        uses: flatpak/flatpak-github-actions/flatpak-builder-action@v6
-        with:
-          bundle: neocalc.flatpak
-          manifest-path: flatpak/com.niltonperimneto.neocalc.yml
-          cache-key: flatpak-builder-${{ github.sha }}
+        run: |
+          # Create a simple manifest if it doesn't exist
+          mkdir -p flatpak
+          if [ ! -f flatpak/com.niltonperimneto.neocalc.yml ]; then
+            cat > flatpak/com.niltonperimneto.neocalc.yml << 'EOF'
+app-id: com.niltonperimneto.neocalc
+runtime: org.gnome.Platform
+runtime-version: '46'
+sdk: org.gnome.Sdk
+command: neocalc_runner
+
+modules:
+  - name: neocalc
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 neocalc_runner /app/bin/neocalc_runner
+      - mkdir -p /app/share/neocalc
+      - cp -r python_gui /app/share/neocalc/
+    sources:
+      - type: dir
+        path: .
+EOF
+          fi
+          
+          flatpak-builder --user --disable-rofiles-fuse --repo=repo build-dir flatpak/com.niltonperimneto.neocalc.yml
+          flatpak build-bundle repo neocalc.flatpak com.niltonperimneto.neocalc
       
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
