@@ -26,8 +26,8 @@ So you want a standalone binary to cherish forever? Fine.
 3. **Locate the Artifact**: The binary `neocalc_runner` awaits you in `target/release/`. It still needs the `python_gui` folder nearby because we're not magic.
 
 ## Credits
-- **Original Author**: The Teacher (You). Created for the noble cause of education.
-- **Fork Maintainer**: The anarchist voice in your head. Created for the chaotic cause of "because I can."
+- **Original Author**: Nilton Perim Neto. Created for the noble cause of education.
+- **Fork Maintainer**: Nilton Perim Neto. Created for me."
 
 ## Safety Notice
 This calculator assumes no liability for failed math exams or existential crises triggered by its output.
