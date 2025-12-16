@@ -1,0 +1,26 @@
+.sidebar {
+    background-color: @window_bg_color;
+    border-right: 1px solid @borders;
+}
+
+.sidebar-row {
+    padding: 10px;
+}
+
+.calc-entry {
+    font-family: "Adwaita Sans";
+    font-size: 50px;
+    padding: 10px;
+}
+
+.suggested-action {
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+    font-weight: bold;
+}
+
+.destructive-action {
+    background-color: @destructive_bg_color;
+    color: @destructive_fg_color;
+    font-weight: bold;
+}

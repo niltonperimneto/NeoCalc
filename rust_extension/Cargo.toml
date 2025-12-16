@@ -1,0 +1,13 @@
+[package]
+name = "neocalc_backend"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "neocalc_backend"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+pyo3 = { version = "0.20" }
+pyo3-asyncio = { version = "0.20", features = ["tokio-runtime"] }
+tokio = { version = "1", features = ["full"] }

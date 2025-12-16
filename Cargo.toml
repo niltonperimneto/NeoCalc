@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "rust_extension",
+    "rust_runner"
+]
+resolver = "2"
+
+[workspace.dependencies]
+pyo3 = { version = "0.20", features = ["auto-initialize"] }
