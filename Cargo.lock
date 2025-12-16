@@ -173,7 +173,7 @@ dependencies = [
 
 [[package]]
 name = "neocalc_backend"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "pyo3",
  "pyo3-asyncio",
@@ -182,7 +182,7 @@ dependencies = [
 
 [[package]]
 name = "neocalc_runner"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "neocalc_backend",
  "pyo3",
