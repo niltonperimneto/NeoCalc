@@ -51,25 +51,23 @@ jobs:
           mkdir -p flatpak
           if [ ! -f flatpak/com.niltonperimneto.neocalc.yml ]; then
             cat > flatpak/com.niltonperimneto.neocalc.yml << 'EOF'
-app-id: com.niltonperimneto.neocalc
-runtime: org.gnome.Platform
-runtime-version: '46'
-sdk: org.gnome.Sdk
-command: neocalc_runner
-
-modules:
-  - name: neocalc
-    buildsystem: simple
-    build-commands:
-      - install -Dm755 neocalc_runner /app/bin/neocalc_runner
-      - mkdir -p /app/share/neocalc
-      - cp -r python_gui /app/share/neocalc/
-    sources:
-      - type: dir
-        path: .
-EOF
+          app-id: com.niltonperimneto.neocalc
+          runtime: org.gnome.Platform
+          runtime-version: '46'
+          sdk: org.gnome.Sdk
+          command: neocalc_runner
+          modules:
+            - name: neocalc
+              buildsystem: simple
+              build-commands:
+                - install -Dm755 neocalc_runner /app/bin/neocalc_runner
+                - mkdir -p /app/share/neocalc
+                - cp -r python_gui /app/share/neocalc/
+              sources:
+                - type: dir
+                  path: .
+          EOF
           fi
-          
           flatpak-builder --user --disable-rofiles-fuse --repo=repo build-dir flatpak/com.niltonperimneto.neocalc.yml
           flatpak build-bundle repo neocalc.flatpak com.niltonperimneto.neocalc
       
