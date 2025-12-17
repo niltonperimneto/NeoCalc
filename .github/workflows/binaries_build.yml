@@ -53,7 +53,7 @@ jobs:
             cat > flatpak/com.niltonperimneto.neocalc.yml << 'EOF'
           app-id: com.niltonperimneto.neocalc
           runtime: org.gnome.Platform
-          runtime-version: '46'
+          runtime-version: '49'
           sdk: org.gnome.Sdk
           command: neocalc
           modules:
