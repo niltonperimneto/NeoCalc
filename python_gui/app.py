@@ -2,7 +2,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 gi.require_version('Rsvg', '2.0')
-from gi.repository import Adw
+from gi.repository import Adw, Gio
 import os
 import sys
 
@@ -14,16 +14,21 @@ BASE_DIR = getattr(sys, 'frozen', False) and sys._MEIPASS or os.path.dirname(os.
 
 class CalculatorApp(Adw.Application):
     def __init__(self):
-        # Oh look, another calculator. Because the world definitely needed one more 
-        # way to divide by zero and crash the economy.
-        super().__init__(application_id="com.nilton.calculator")
+        # Force NON_UNIQUE to ensure it runs even if DBus thinks another one exists
+        super().__init__(application_id="com.nilton.calculator",
+                         flags=Gio.ApplicationFlags.NON_UNIQUE)
 
     def do_activate(self, app=None):
         Calculator(self).present()
 
 def main():
-    CalculatorApp().run()
+    import sys
+    # Ensure argv is valid for GApplication
+    argv = sys.argv
+    if not argv or not argv[0]:
+        argv = ["neocalc"]
+        
+    CalculatorApp().run(argv)
 
 if __name__ == "__main__":
-    # The entry point of our doom.
     main()

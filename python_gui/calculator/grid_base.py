@@ -13,13 +13,19 @@ class CalculatorGrid(Gtk.Grid):
     def on_button_clicked(self, button):
         """Handle standard digit and operator clicks."""
         current = self.calculator.entry.get_text()
-        new_text = CalculatorLogic.append_text(current, button.get_label())
+    def on_button_clicked(self, button):
+        """Handle standard digit and operator clicks."""
+        current = self.calculator.entry.get_text()
+        new_text = self.calculator.logic.append_text(current, button.get_label())
         self.calculator.entry.set_text(new_text)
 
     def on_equal_clicked(self, button):
         """Handle evaluation."""
         expression = self.calculator.entry.get_text()
-        result_text = CalculatorLogic.evaluate(expression)
+    def on_equal_clicked(self, button):
+        """Handle evaluation."""
+        expression = self.calculator.entry.get_text()
+        result_text = self.calculator.logic.evaluate(expression)
         self.calculator.entry.set_text(result_text)
         
         # Update history display
@@ -32,10 +38,15 @@ class CalculatorGrid(Gtk.Grid):
 
     def on_clear_clicked(self, button):
         """Handle clear action."""
-        self.calculator.entry.set_text(CalculatorLogic.clear())
+    def on_clear_clicked(self, button):
+        """Handle clear action."""
+        self.calculator.entry.set_text(self.calculator.logic.clear())
 
     def on_func_clicked(self, button):
         """Handle scientific function clicks."""
         current = self.calculator.entry.get_text()
-        new_text = CalculatorLogic.append_function(current, button.get_label())
+    def on_func_clicked(self, button):
+        """Handle scientific function clicks."""
+        current = self.calculator.entry.get_text()
+        new_text = self.calculator.logic.append_function(current, button.get_label())
         self.calculator.entry.set_text(new_text)

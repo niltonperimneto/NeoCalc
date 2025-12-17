@@ -14,6 +14,7 @@ class CalculatorWidget(Gtk.Box):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=0, **kwargs)
         
         self.parent_window = None  # Will be set by window when adding instance
+        self.logic = CalculatorLogic() # Instance-specific logic
 
         # Model entry (kept hidden) and a separate display label
         # Grids interact with `self.entry` as before; we update the
@@ -111,7 +112,7 @@ class CalculatorWidget(Gtk.Box):
     
     def update_history_display(self):
         """Update the history label with recent calculations."""
-        history = CalculatorLogic.get_history()
+        history = self.logic.get_history()
         if history:
             # Show last 5 entries
             recent_history = history[-5:]

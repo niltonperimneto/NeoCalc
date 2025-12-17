@@ -50,20 +50,15 @@ class ActionRegistry:
             print("Switched to Light Mode")
             
         try:
-            self.window.tab_view.disconnect_by_func(self.window.on_tab_page_changed)
-            self.window.tab_view.disconnect_by_func(self.window.on_close_calculator_clicked)
+            self.window.tab_view.disconnect_by_func(self.window.calc_manager.on_tab_page_changed)
+            self.window.tab_view.disconnect_by_func(self.window.calc_manager.on_close_calculator_clicked)
         except:
             pass
-        self.window.tab_view.connect("notify::selected-page", self.window.on_tab_page_changed)
-        self.window.tab_view.connect("close-page", self.window.on_close_calculator_clicked)
+        self.window.tab_view.connect("notify::selected-page", self.window.calc_manager.on_tab_page_changed)
+        self.window.tab_view.connect("close-page", self.window.calc_manager.on_close_calculator_clicked)
 
     def on_switch_scientific(self, action, param):
         self.window.header_view.set_selected_type(1)
-        # We need to trigger the dropdown change to update the view
-        # or we can update the dropdown which triggers the change
-        # The original code just set the dropdown.
-        # Let's verify what set_selected_type does in header.py.
-        # It updates the dropdown selection.
 
     def on_switch_standard(self, action, param):
         self.window.header_view.set_selected_type(0)

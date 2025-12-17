@@ -22,11 +22,27 @@ async fn main() -> PyResult<()> {
         let path: Bound<PyList> = sys.getattr("path")?.extract()?;
 
         // 3. Add 'python_gui' directory to sys.path.
-        // I really hope env::current_dir() returns what I think it returns.
         let current_dir = env::current_dir()?;
-        let gui_dir = current_dir.join("python_gui");
+        let search_paths = vec![
+            current_dir.join("python_gui"),
+            current_dir.parent().unwrap_or(&current_dir).join("python_gui"),
+            current_dir.parent().unwrap_or(&current_dir).parent().unwrap_or(&current_dir).join("python_gui"),
+        ];
         
-        path.insert(0, gui_dir)?;
+        let mut found_path = None;
+        for path in search_paths {
+            if path.exists() {
+                found_path = Some(path);
+                break;
+            }
+        }
+        
+        if let Some(gui_path) = found_path {
+            path.insert(0, gui_path)?;
+        } else {
+             eprintln!("Could not find python_gui directory!");
+             path.insert(0, "python_gui")?;
+        }
 
         // 4. Import the application module.
         // If this works, it's a miracle.
