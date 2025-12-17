@@ -1,6 +1,6 @@
 from gi.repository import Gio
-from ..about import present_about_dialog
-from ..styling import StyleManager
+from .about import present_about_dialog
+from .styling import StyleManager
 
 class ActionRegistry:
     def __init__(self, window):
@@ -40,7 +40,7 @@ class ActionRegistry:
         present_about_dialog(self.window)
 
     def on_show_shortcuts(self, action, param):
-        from ..shortcuts import show_shortcuts_dialog
+        from .shortcuts import show_shortcuts_dialog
         show_shortcuts_dialog(self.window)
 
     def on_toggle_mode_action(self, action, param):

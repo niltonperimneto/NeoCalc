@@ -44,23 +44,28 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y flatpak flatpak-builder
-      
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
       - name: Build Flatpak
         run: |
           # Create a simple manifest if it doesn't exist
-          mkdir -p flatpak
-          if [ ! -f flatpak/com.niltonperimneto.neocalc.yml ]; then
-            cat > flatpak/com.niltonperimneto.neocalc.yml << 'EOF'
+          if [ ! -f com.niltonperimneto.neocalc.yml ]; then
+            cat > com.niltonperimneto.neocalc.yml << 'EOF'
           app-id: com.niltonperimneto.neocalc
           runtime: org.gnome.Platform
-          runtime-version: '46'
+          runtime-version: '49'
           sdk: org.gnome.Sdk
+          sdk-extensions:
+            - org.freedesktop.Sdk.Extension.rust-stable
           command: neocalc
           modules:
             - name: neocalc
               buildsystem: simple
+              build-options:
+                build-args:
+                  - --share=network
               build-commands:
-                - cargo build --release --manifest-path rust_frontend/Cargo.toml
+                - . /usr/lib/sdk/rust-stable/enable.sh && cargo build --release --manifest-path rust_frontend/Cargo.toml
                 - install -Dm755 target/release/rust_frontend /app/bin/neocalc
                 - mkdir -p /app/share/neocalc
                 - cp -r python_gui /app/share/neocalc/
@@ -69,7 +74,7 @@ jobs:
                   path: .
           EOF
           fi
-          flatpak-builder --user --disable-rofiles-fuse --repo=repo build-dir flatpak/com.niltonperimneto.neocalc.yml
+          flatpak-builder --user --install-deps-from=flathub --disable-rofiles-fuse --repo=repo build-dir com.niltonperimneto.neocalc.yml
           flatpak build-bundle repo neocalc.flatpak com.niltonperimneto.neocalc
       
       - name: Upload Artifact
@@ -88,13 +93,13 @@ jobs:
         with:
           update: true
           install: >-
-            mingw-w64-x86_64-toolchain
-            mingw-w64-x86_64-rust
-            mingw-w64-x86_64-gtk4
-            mingw-w64-x86_64-libadwaita
-            mingw-w64-x86_64-python
-            mingw-w64-x86_64-python-gobject
-          msystem: MINGW64
+            mingw-w64-ucrt-x86_64-toolchain
+            mingw-w64-ucrt-x86_64-rust
+            mingw-w64-ucrt-x86_64-gtk4
+            mingw-w64-ucrt-x86_64-libadwaita
+            mingw-w64-ucrt-x86_64-python
+            mingw-w64-ucrt-x86_64-python-gobject
+          msystem: UCRT64
           
       - name: Build
         shell: msys2 {0}
@@ -122,7 +127,21 @@ jobs:
           cp /mingw64/bin/libintl-8.dll dist/NeoCalc/
           mkdir -p dist/NeoCalc/lib
           cp -r /mingw64/lib/python3.* dist/NeoCalc/lib/
-          
+          cp /ucrt64/bin/libpython3*.dll dist/NeoCalc/
+          cp /ucrt64/bin/libgtk-4-1.dll dist/NeoCalc/
+          cp /ucrt64/bin/libadwaita-1-0.dll dist/NeoCalc/
+          cp /ucrt64/bin/libgio-2.0-0.dll dist/NeoCalc/
+          cp /ucrt64/bin/libgobject-2.0-0.dll dist/NeoCalc/
+          cp /ucrt64/bin/libglib-2.0-0.dll dist/NeoCalc/
+          cp /ucrt64/bin/libgirepository-1.0-1.dll dist/NeoCalc/
+          cp /ucrt64/bin/libcairo-2.dll dist/NeoCalc/
+          cp /ucrt64/bin/libpango-1.0-0.dll dist/NeoCalc/
+          cp /ucrt64/bin/libpangocairo-1.0-0.dll dist/NeoCalc/
+          cp /ucrt64/bin/libffi-8.dll dist/NeoCalc/
+          cp /ucrt64/bin/libintl-8.dll dist/NeoCalc/
+          cp /ucrt64/bin/libgcc_s_seh-1.dll dist/NeoCalc/
+          cp /ucrt64/bin/libwinpthread-1.dll dist/NeoCalc/
+          echo "DLLs copied."
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:

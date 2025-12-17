@@ -7,6 +7,13 @@ But then **I** came along. I saw a perfectly functional teaching tool and though
 ## Usage
 It calculates things. Sometimes. Mostly it judges you for needing a calculator to multiply single digits.
 
+## Flatpak
+You can install downloading the flatpak from the release page and running:
+
+```bash
+flatpak install ./neocalc.flatpak
+```   
+
 ## Installation
 If you really want to verify that mass times acceleration equals force (or merely headache):
 
@@ -27,3 +34,7 @@ So you want a standalone binary to cherish forever? Fine.
 
 ## Safety Notice
 This calculator assumes no liability for failed math exams or existential crises triggered by its output.
+
+## License
+
+All the code is licensed under the GPLv3 license. You can check under LICENSE file for more details.
