@@ -108,10 +108,6 @@ jobs:
           mkdir -p dist/NeoCalc
           cp target/release/rust_frontend.exe dist/NeoCalc/NeoCalc.exe
           cp -r python_gui dist/NeoCalc/
-          # Copy DLLs (Simplified approach, typically needs ldd/ntldd)
-          # For a quick CI artifact, just the exe + python might fail without DLLs, 
-          # but properly bundling DLLs is complex. 
-          # We will just verify the build for now.
           
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
