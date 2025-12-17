@@ -21,20 +21,48 @@ async fn main() -> PyResult<()> {
         // getattr("path")?.extract()?; -> The '?' operator is carrying this entire codebase.
         let path: Bound<PyList> = sys.getattr("path")?.extract()?;
 
-        // 3. Add 'python_gui' directory to sys.path.
-        // We use current_exe() because current_dir() is unreliable (depends on shell).
+        // 3. Find 'python_gui' directory.
+        // We look in current directory and parents to support running from 'target/debug'
         let exe_path = env::current_exe()?;
         let exe_dir = exe_path.parent().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>("Failed to get exe directory"))?;
-        let gui_dir = exe_dir.join("python_gui");
         
+        let mut gui_dir = exe_dir.join("python_gui");
+        let mut found = false;
+        
+        // Search up to 3 levels up
+        let mut current_search = exe_dir.to_path_buf();
+        for _ in 0..3 {
+            let candidate = current_search.join("python_gui");
+            if candidate.exists() {
+                gui_dir = candidate;
+                found = true;
+                break;
+            }
+            if let Some(parent) = current_search.parent() {
+                current_search = parent.to_path_buf();
+            } else {
+                break;
+            }
+        }
+
+        if !found {
+            eprintln!("WARNING: Could not find 'python_gui' directory. Defaulting to: {:?}", gui_dir);
+        } else {
+            eprintln!("Found python_gui at: {:?}", gui_dir);
+        }
+
+        let app_path = gui_dir.join("app.py");
+        let file_exists = app_path.exists();
+
+        // Add BOTH the gui directory and the root directory to be safe
         path.insert(0, gui_dir.clone())?;
 
         // 4. Import the application module.
         // We catch the error to add the computed path to the message for debugging.
         let app_module = py.import("app").map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyImportError, _>(
-                format!("Failed to import 'app'. \nComputed Path: {:?} \nsys.path: {:?} \nOriginal Error: {}", 
-                    gui_dir, path, e)
+                format!("Failed to import 'app'. \nCheck: {} -> Exists? {} \nComputed Path: {:?} \nsys.path: {:?} \nOriginal Error: {}", 
+                    app_path.display(), file_exists, gui_dir, path, e)
             )
         })?;
         
