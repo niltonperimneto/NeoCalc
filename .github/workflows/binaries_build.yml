@@ -56,12 +56,17 @@ jobs:
           runtime: org.gnome.Platform
           runtime-version: '49'
           sdk: org.gnome.Sdk
+          sdk-extensions:
+            - org.freedesktop.Sdk.Extension.rust-stable
           command: neocalc
           modules:
             - name: neocalc
               buildsystem: simple
+              build-options:
+                build-args:
+                  - --share=network
               build-commands:
-                - cargo build --release --manifest-path rust_frontend/Cargo.toml
+                - . /usr/lib/sdk/rust-stable/enable.sh && cargo build --release --manifest-path rust_frontend/Cargo.toml
                 - install -Dm755 target/release/rust_frontend /app/bin/neocalc
                 - mkdir -p /app/share/neocalc
                 - cp -r python_gui /app/share/neocalc/
