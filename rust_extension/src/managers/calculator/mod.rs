@@ -1,58 +1,9 @@
+pub mod ui;
+
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use std::sync::{Arc, Mutex};
-
-/// Manages the display widget in the header.
-#[pyclass]
-pub struct DisplayManager {
-    placeholder: Py<PyAny>,
-}
-
-#[pymethods]
-impl DisplayManager {
-    #[new]
-    fn new(placeholder: Py<PyAny>) -> Self {
-        DisplayManager { placeholder }
-    }
-
-    fn switch_display_for(&self, py: Python<'_>, calc_widget: Py<PyAny>) -> PyResult<()> {
-        if calc_widget.is_none(py) {
-            return Ok(());
-        }
-
-        // Get display widget: display = calc_widget.get_display_widget()
-        let display = calc_widget.call_method0(py, "get_display_widget")?;
-
-        // Check if already child: current = self.placeholder.get_first_child()
-        let current_child = self.placeholder.call_method0(py, "get_first_child")?;
-
-        if current_child.is(&display) {
-            // calc_widget.update_history_display()
-            calc_widget.call_method0(py, "update_history_display")?;
-            return Ok(());
-        }
-
-        // Remove existing children
-        // child = self.placeholder.get_first_child()
-        let mut child = self.placeholder.call_method0(py, "get_first_child")?;
-        while !child.is_none(py) {
-            let next_child = child.call_method0(py, "get_next_sibling")?;
-            self.placeholder.call_method1(py, "remove", (&child,))?;
-            child = next_child;
-        }
-
-        // Unparent if needed
-        let parent = display.call_method0(py, "get_parent")?;
-        if !parent.is_none(py) && !parent.is(&self.placeholder) {
-            parent.call_method1(py, "remove", (&display,))?;
-        }
-
-        // Append
-        self.placeholder.call_method1(py, "append", (&display,))?;
-
-        Ok(())
-    }
-}
+use pyo3::exceptions::PyRuntimeError;
 
 /// Manages calculator instances, sidebar rows, and tab pages.
 #[pyclass]
@@ -65,6 +16,9 @@ pub struct CalculatorManager {
     // State
     instance_count: Arc<Mutex<i32>>,
     calculator_widgets: Arc<Mutex<Vec<Py<PyAny>>>>,
+
+    // Async runtime helper
+    rt: tokio::runtime::Runtime,
 }
 
 #[pymethods]
@@ -75,15 +29,33 @@ impl CalculatorManager {
         tab_view: Py<PyAny>,
         sidebar_view: Py<PyAny>,
         display_manager: Py<PyAny>,
-    ) -> Self {
-        CalculatorManager {
+    ) -> PyResult<Self> {
+        let rt = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .map_err(|e| PyRuntimeError::new_err(format!("Failed to create runtime: {}", e)))?;
+
+        Ok(CalculatorManager {
             window,
             tab_view,
             sidebar_view,
             display_manager,
             instance_count: Arc::new(Mutex::new(0)),
             calculator_widgets: Arc::new(Mutex::new(Vec::new())),
-        }
+            rt,
+        })
+    }
+
+    /// Simulate a heavy async calculation
+    fn perform_async_calc(&self, py: Python<'_>, seconds: u64) -> PyResult<Py<PyAny>> {
+        let _guard = self.rt.enter();
+        let fut = async move {
+            tokio::time::sleep(std::time::Duration::from_secs(seconds)).await;
+            Ok(format!("Finished calculation after {} seconds", seconds))
+        };
+        
+        let awaitable = pyo3_async_runtimes::tokio::future_into_py(py, fut)?;
+        Ok(awaitable.unbind())
     }
 
     fn setup_signals(&self, py: Python<'_>, pyself: Py<PyAny>) -> PyResult<()> {
@@ -104,7 +76,7 @@ impl CalculatorManager {
         let new_count = n_pages + 1;
         
         {
-            let mut count = self.instance_count.lock().unwrap();
+            let mut count = self.instance_count.lock().map_err(|e| PyRuntimeError::new_err(format!("Lock poisoned: {}", e)))?;
             *count = new_count;
         }
 
@@ -116,7 +88,7 @@ impl CalculatorManager {
         
         let locals = PyDict::new(py);
         locals.set_item("CalculatorWidget", &calc_widget_class)?;
-        let code = std::ffi::CString::new("CalculatorWidget()").unwrap();
+        let code = std::ffi::CString::new("CalculatorWidget()").map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
         let calc_widget = py.eval(&code, None, Some(&locals))?.unbind();
 
         // calc_widget.parent_window = self.window
@@ -135,13 +107,13 @@ impl CalculatorManager {
 
         self.tab_view.bind(py).call_method1("set_selected_page", (&page,))?;
 
-        // Create sidebar row
-        let row = self._create_sidebar_row(py, &title, &name, calc_widget.clone_ref(py), new_count)?;
+        // Create sidebar row via helper
+        let row = ui::create_sidebar_row(py, &title, &name, calc_widget.clone_ref(py), new_count)?;
         
         self.sidebar_view.bind(py).call_method1("add_row", (&row,))?;
 
         {
-            let mut widgets = self.calculator_widgets.lock().unwrap();
+            let mut widgets = self.calculator_widgets.lock().map_err(|e| PyRuntimeError::new_err(format!("Lock poisoned: {}", e)))?;
             widgets.push(calc_widget.clone_ref(py));
         }
 
@@ -155,74 +127,13 @@ impl CalculatorManager {
         let locals = PyDict::new(py);
         locals.set_item("preview_label", &row_preview_label)?;
         // Use default argument to capture preview_label
-        let code = std::ffi::CString::new("lambda e, pl=preview_label: pl.set_text(e.get_text() or '0')").unwrap();
+        let code = std::ffi::CString::new("lambda e, pl=preview_label: pl.set_text(e.get_text() or '0')").map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
         let lambda = py.eval(&code, None, Some(&locals))?;
         
         let entry = calc_widget.bind(py).getattr("entry")?;
         entry.call_method("connect", ("changed", lambda), None)?;
 
         Ok(())
-    }
-
-    fn _create_sidebar_row(&self, py: Python<'_>, title: &str, name: &str, calc_widget: Py<PyAny>, count: i32) -> PyResult<Py<PyAny>> {
-        let gtk = py.import("gi.repository.Gtk")?;
-        
-        let row = gtk.call_method0("ListBoxRow")?;
-        let row_box = gtk.call_method0("Box")?;
-        // call_method1 passes tuple (arg,)
-        row_box.call_method1("set_orientation", (gtk.getattr("Orientation")?.getattr("VERTICAL")?,))?;
-        row_box.call_method1("set_spacing", (4,))?;
-        row_box.setattr("margin_start", 4)?;
-        row_box.setattr("margin_end", 4)?;
-        row_box.setattr("margin_top", 4)?;
-        row_box.setattr("margin_bottom", 4)?;
-
-        let header_box = gtk.call_method0("Box")?;
-        header_box.call_method1("set_orientation", (gtk.getattr("Orientation")?.getattr("HORIZONTAL")?,))?;
-        header_box.call_method1("set_spacing", (4,))?;
-
-        // Label() then set_label(title) because Gtk.Label(str) is not supported
-        let title_label = gtk.call_method0("Label")?;
-        title_label.call_method1("set_label", (title,))?;
-        title_label.call_method1("set_xalign", (0.0,))?;
-        title_label.call_method1("set_hexpand", (true,))?;
-        title_label.call_method1("add_css_class", ("heading",))?;
-        header_box.call_method1("append", (&title_label,))?;
-
-        let close_btn = gtk.call_method0("Button")?;
-        close_btn.call_method1("set_icon_name", ("window-close-symbolic",))?;
-        close_btn.call_method1("add_css_class", ("flat",))?;
-        close_btn.call_method1("add_css_class", ("circular",))?;
-        close_btn.call_method1("set_tooltip_text", ("Close Calculation",))?;
-
-        let locals = PyDict::new(py);
-        locals.set_item("cw", &calc_widget)?;
-        // Use default argument `cw=cw` to capture it in the lambda closure
-        let code = std::ffi::CString::new("lambda b, cw=cw: cw.parent_window.calc_manager.on_close_calculator_from_sidebar(cw)").unwrap();
-        let close_lambda = py.eval(&code, None, Some(&locals))?;
-        close_btn.call_method("connect", ("clicked", close_lambda), None)?;
-
-        header_box.call_method1("append", (&close_btn,))?;
-        row_box.call_method1("append", (&header_box,))?;
-
-        let preview_label = gtk.call_method0("Label")?;
-        preview_label.call_method1("set_label", ("0",))?;
-        preview_label.call_method1("set_xalign", (1.0,))?;
-        preview_label.call_method1("add_css_class", ("calc-preview",))?;
-        preview_label.call_method1("set_wrap", (true,))?;
-        preview_label.call_method1("set_max_width_chars", (20,))?;
-        row_box.call_method1("append", (&preview_label,))?;
-
-        row.call_method1("set_child", (&row_box,))?;
-
-        // Metadata
-        row.setattr("calc_widget", calc_widget)?;
-        row.setattr("calc_name", name)?;
-        row.setattr("calc_number", count)?;
-        row.setattr("preview_label", &preview_label)?;
-        row.setattr("title_label", &title_label)?;
-
-        Ok(row.into())
     }
 
     fn on_close_calculator_from_sidebar(&self, py: Python<'_>, calc_widget: Py<PyAny>) -> PyResult<()> {
@@ -258,7 +169,7 @@ impl CalculatorManager {
 
         // Remove from widgets list
         {
-            let mut widgets = self.calculator_widgets.lock().unwrap();
+            let mut widgets = self.calculator_widgets.lock().map_err(|e| PyRuntimeError::new_err(format!("Lock poisoned: {}", e)))?;
             if let Some(pos) = widgets.iter().position(|x| x.is(&calc_widget)) {
                 widgets.remove(pos);
             }
@@ -288,15 +199,12 @@ impl CalculatorManager {
 
         self.renumber_instances(py)?;
 
-        // If last one closed (and N=0), create new. BUT we prevent closing last one.
-        // However, if we detach for other reasons?
-        // Let's keep logic:
         let n_pages: i32 = self.tab_view.call_method0(py, "get_n_pages")?.extract(py)?;
         if n_pages == 0 {
              self.add_calculator_instance(py)?;
         }
         
-        let mut count = self.instance_count.lock().unwrap();
+        let mut count = self.instance_count.lock().map_err(|e| PyRuntimeError::new_err(format!("Lock poisoned: {}", e)))?;
         *count = n_pages;
 
         Ok(())
