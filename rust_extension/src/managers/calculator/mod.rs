@@ -142,25 +142,16 @@ impl CalculatorManager {
             return Ok(());
         }
 
-        for i in 0..n_pages {
-            let page = self.tab_view.call_method1(py, "get_nth_page", (i,))?;
-            if !page.bind(py).hasattr("calc_widget")? { continue; }
-            let page_cw = page.getattr(py, "calc_widget")?;
-            if page_cw.is(&calc_widget) {
-                self.tab_view.call_method1(py, "close_page", (&page,))?;
-                break;
-            }
+        if let Some((_, page)) = self.find_page_by_widget(py, &calc_widget)? {
+            self.tab_view.call_method1(py, "close_page", (&page,))?;
         }
         Ok(())
     }
 
     fn on_close_calculator_clicked(&self, py: Python<'_>, _tab_view: Py<PyAny>, _page: Py<PyAny>) -> PyResult<bool> {
         let n_pages: i32 = self.tab_view.call_method0(py, "get_n_pages")?.extract(py)?;
-        if n_pages <= 1 {
-            Ok(true) // Stop close
-        } else {
-            Ok(false) // Allow close
-        }
+        // Prevent closing the last tab
+        Ok(n_pages <= 1) 
     }
 
     fn on_page_detached(&self, py: Python<'_>, _tab_view: Py<PyAny>, page: Py<PyAny>, _position: Py<PyAny>) -> PyResult<()> {
@@ -176,25 +167,9 @@ impl CalculatorManager {
         }
 
         // Remove sidebar row
-        let sidebar_list = self.sidebar_view.getattr(py, "sidebar_list")?;
-        let mut i = 0;
-        let mut row_to_remove: Option<Py<PyAny>> = None;
-        loop {
-            let row = sidebar_list.call_method1(py, "get_row_at_index", (i,))?;
-            if row.is_none(py) { break; }
-            
-            if row.bind(py).hasattr("calc_widget")? {
-                let row_cw = row.getattr(py, "calc_widget")?;
-                if row_cw.is(&calc_widget) {
-                    row_to_remove = Some(row);
-                    break;
-                }
-            }
-            i += 1;
-        }
-
-        if let Some(row) = row_to_remove {
-            sidebar_list.call_method1(py, "remove", (row,))?;
+        if let Some(row) = self.find_sidebar_row_by_widget(py, &calc_widget)? {
+             let sidebar_list = self.sidebar_view.getattr(py, "sidebar_list")?;
+             sidebar_list.call_method1(py, "remove", (row,))?;
         }
 
         self.renumber_instances(py)?;
@@ -224,12 +199,7 @@ impl CalculatorManager {
                 let history: Vec<String> = logic.call_method0(py, "get_history")?.extract(py)?;
                 
                 let title = if let Some(last) = history.last() {
-                    let parts: Vec<&str> = last.split(" = ").collect();
-                    let mut t = parts[0].to_string();
-                    if t.len() > 20 {
-                        t = format!("{}...", &t[..17]);
-                    }
-                    t
+                    Self::format_title(last)
                 } else {
                     format!("Calculator {}", new_number)
                 };
@@ -237,24 +207,13 @@ impl CalculatorManager {
                 page.call_method1(py, "set_title", (&title,))?;
 
                 // Update sidebar
-                 let sidebar_list = self.sidebar_view.getattr(py, "sidebar_list")?;
-                 let mut j = 0;
-                 loop {
-                     let row = sidebar_list.call_method1(py, "get_row_at_index", (j,))?;
-                     if row.is_none(py) { break; }
-                     if row.bind(py).hasattr("calc_widget")? {
-                         let row_cw = row.getattr(py, "calc_widget")?;
-                         if row_cw.is(&calc_widget) {
-                             row.setattr(py, "calc_number", new_number)?;
-                             if row.bind(py).hasattr("title_label")? {
-                                 let tl = row.getattr(py, "title_label")?;
-                                 tl.call_method1(py, "set_label", (&title,))?;
-                             }
-                             break;
-                         }
-                     }
-                     j += 1;
-                 }
+                if let Some(row) = self.find_sidebar_row_by_widget(py, &calc_widget)? {
+                    row.setattr(py, "calc_number", new_number)?;
+                    if row.bind(py).hasattr("title_label")? {
+                        let tl = row.getattr(py, "title_label")?;
+                        tl.call_method1(py, "set_label", (&title,))?;
+                    }
+                }
             }
         }
         Ok(())
@@ -266,22 +225,10 @@ impl CalculatorManager {
         
         if history.is_empty() { return Ok(()); }
 
-        let n_pages: i32 = self.tab_view.call_method0(py, "get_n_pages")?.extract(py)?;
-        for i in 0..n_pages {
-            let page = self.tab_view.call_method1(py, "get_nth_page", (i,))?;
-            if page.bind(py).hasattr("calc_widget")? {
-                let page_cw = page.getattr(py, "calc_widget")?;
-                if page_cw.is(&calc_widget) {
-                    let last = history.last().unwrap();
-                    let parts: Vec<&str> = last.split(" = ").collect();
-                    let mut t = parts[0].to_string();
-                    if t.len() > 20 {
-                        t = format!("{}...", &t[..17]);
-                    }
-                    page.call_method1(py, "set_title", (&t,))?;
-                    break;
-                }
-            }
+        if let Some((_, page)) = self.find_page_by_widget(py, &calc_widget)? {
+            let last = history.last().unwrap();
+            let title = Self::format_title(last);
+            page.call_method1(py, "set_title", (&title,))?;
         }
         Ok(())
     }
@@ -299,18 +246,54 @@ impl CalculatorManager {
     fn on_sidebar_row_selected(&self, py: Python<'_>, _box: Py<PyAny>, row: Py<PyAny>) -> PyResult<()> {
         if !row.is_none(py) && row.bind(py).hasattr("calc_widget")? {
              let calc_widget = row.getattr(py, "calc_widget")?;
-             let n_pages: i32 = self.tab_view.call_method0(py, "get_n_pages")?.extract(py)?;
-             for i in 0..n_pages {
-                 let page = self.tab_view.call_method1(py, "get_nth_page", (i,))?;
-                 if page.bind(py).hasattr("calc_widget")? {
-                     let page_cw = page.getattr(py, "calc_widget")?;
-                     if page_cw.is(&calc_widget) {
-                         self.tab_view.call_method1(py, "set_selected_page", (&page,))?;
-                         break;
-                     }
-                 }
+             if let Some((_, page)) = self.find_page_by_widget(py, &calc_widget)? {
+                 self.tab_view.call_method1(py, "set_selected_page", (&page,))?;
              }
         }
         Ok(())
+    }
+}
+
+// Helper methods (not exposed to Python)
+impl CalculatorManager {
+    fn find_page_by_widget(&self, py: Python<'_>, target_widget: &Py<PyAny>) -> PyResult<Option<(i32, Py<PyAny>)>> {
+        let n_pages: i32 = self.tab_view.call_method0(py, "get_n_pages")?.extract(py)?;
+        for i in 0..n_pages {
+            let page = self.tab_view.call_method1(py, "get_nth_page", (i,))?;
+            if page.bind(py).hasattr("calc_widget")? {
+                let page_cw = page.getattr(py, "calc_widget")?;
+                if page_cw.is(target_widget) {
+                    return Ok(Some((i, page)));
+                }
+            }
+        }
+        Ok(None)
+    }
+
+    fn find_sidebar_row_by_widget(&self, py: Python<'_>, target_widget: &Py<PyAny>) -> PyResult<Option<Py<PyAny>>> {
+        let sidebar_list = self.sidebar_view.getattr(py, "sidebar_list")?;
+        let mut i = 0;
+        loop {
+            let row = sidebar_list.call_method1(py, "get_row_at_index", (i,))?;
+            if row.is_none(py) { break; }
+            
+            if row.bind(py).hasattr("calc_widget")? {
+                let row_cw = row.getattr(py, "calc_widget")?;
+                if row_cw.is(target_widget) {
+                    return Ok(Some(row));
+                }
+            }
+            i += 1;
+        }
+        Ok(None)
+    }
+
+    fn format_title(history_entry: &str) -> String {
+        let parts: Vec<&str> = history_entry.split(" = ").collect();
+        let mut t = parts[0].to_string();
+        if t.len() > 20 {
+            t = format!("{}...", &t[..17]);
+        }
+        t
     }
 }
