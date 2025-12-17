@@ -19,7 +19,8 @@ class CalculatorManager:
         self.tab_view.connect("page-detached", self.on_page_detached)
 
     def add_calculator_instance(self):
-        self.instance_count += 1
+        # We want the next number. If renumbering is active, it's n_pages + 1.
+        self.instance_count = self.tab_view.get_n_pages() + 1
         title = f"Calculator {self.instance_count}"
         
         # Create Widget
@@ -113,7 +114,7 @@ class CalculatorManager:
                 break
 
     def on_page_detached(self, tab_view, page, position):
-        """Called when a page is removed from the tab view. Clean up sidebar."""
+        """Called when a page is removed from the tab view. Clean up and renumber."""
         if not hasattr(page, 'calc_widget'):
             return
 
@@ -140,15 +141,71 @@ class CalculatorManager:
         if row_to_remove:
             self.sidebar_view.sidebar_list.remove(row_to_remove)
 
-        # If last one closed, create new
-        if self.tab_view.get_n_pages() == 0:
-            self.add_calculator_instance()
+        # Renumber remaining instances
+        self.renumber_instances()
+        
+        # Reset instance count to match number of pages (optional, but keeps numbers small)
+        self.instance_count = self.tab_view.get_n_pages()
+
+    def renumber_instances(self):
+        n_pages = self.tab_view.get_n_pages()
+        for i in range(n_pages):
+            page = self.tab_view.get_nth_page(i)
+            new_number = i + 1
+            if hasattr(page, 'calc_number'):
+                page.calc_number = new_number
+                
+                # Update page title if it was a default title
+                # We need a robust way to know if title is custom.
+                # Simplest heuristic: check if it matches "Calculator X" pattern 
+                # OR just force update default part. 
+                # But user wants "names dynamically change". 
+                # Let's assume we reset the default title part.
+                
+                # Check history to see if we should use that instead
+                history = page.calc_widget.logic.get_history()
+                if history:
+                    latest = history[-1].split(' = ')[0]
+                    if len(latest) > 20:
+                        latest = latest[:17] + "..."
+                    page.set_title(latest)
+                else:
+                    page.set_title(f"Calculator {new_number}")
+                
+            # Update sidebar row
+            # We have to find the matching row again - ideally we should cache this mapping 
+            # but iterative search is fine for small N.
+            j = 0
+            while True:
+                 row = self.sidebar_view.sidebar_list.get_row_at_index(j)
+                 if row is None: break
+                 if hasattr(row, 'calc_widget') and row.calc_widget is page.calc_widget:
+                     row.calc_number = new_number
+                     if hasattr(row, 'title_label'):
+                        # Same logic for row title
+                        history = page.calc_widget.logic.get_history()
+                        if history:
+                            latest = history[-1].split(' = ')[0]
+                            if len(latest) > 20:
+                                latest = latest[:17] + "..."
+                            row.title_label.set_label(latest)
+                        else:
+                            row.title_label.set_label(f"Calculator {new_number}")
+                     break
+                 j += 1
 
     def on_close_calculator_clicked(self, tab_view, page):
+        # Prevent closing if it's the last one
+        if self.tab_view.get_n_pages() <= 1:
+            return True # Stop propagation, don't close
+            
         # Allow default handler to close the page
         return False
             
     def on_close_calculator_from_sidebar(self, calc_widget):
+        if self.tab_view.get_n_pages() <= 1:
+            return
+            
         n_pages = self.tab_view.get_n_pages()
         for i in range(n_pages):
             page = self.tab_view.get_nth_page(i)
