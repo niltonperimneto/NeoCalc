@@ -114,6 +114,26 @@ jobs:
           cp target/release/rust_frontend.exe dist/NeoCalc/NeoCalc.exe
           cp -r python_gui dist/NeoCalc/
           
+          # Copy essential DLLs from MSYS2 environment
+          # We need Python, GTK4, Adwaita, and their dependencies
+          # Using ldd to find dependencies would be better, but for now we bruteforce common ones
+          cp /mingw64/bin/libpython3*.dll dist/NeoCalc/
+          cp /mingw64/bin/python3*.dll dist/NeoCalc/
+          cp /mingw64/bin/libgtk-4-1.dll dist/NeoCalc/
+          cp /mingw64/bin/libadwaita-1-0.dll dist/NeoCalc/
+          cp /mingw64/bin/libgio-2.0-0.dll dist/NeoCalc/
+          cp /mingw64/bin/libgobject-2.0-0.dll dist/NeoCalc/
+          cp /mingw64/bin/libglib-2.0-0.dll dist/NeoCalc/
+          cp /mingw64/bin/libgirepository-1.0-1.dll dist/NeoCalc/
+          cp /mingw64/bin/libcairo-2.dll dist/NeoCalc/
+          cp /mingw64/bin/libpango-1.0-0.dll dist/NeoCalc/
+          cp /mingw64/bin/libpangocairo-1.0-0.dll dist/NeoCalc/
+          cp /mingw64/bin/libffi-8.dll dist/NeoCalc/
+          cp /mingw64/bin/libintl-8.dll dist/NeoCalc/
+          # Copy python stdlib (minimal) or entire lib?
+          # For a truly portable build we'd need the Lib folder, but PyO3 might find system python if installed.
+          # But for the requested DLL issue:
+          echo "DLLs copied."
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
