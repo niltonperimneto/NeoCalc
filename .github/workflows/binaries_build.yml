@@ -35,6 +35,24 @@ jobs:
           name: NeoCalc-Linux
           path: dist/NeoCalc/
 
+  build-flatpak:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build Flatpak
+        uses: flatpak/flatpak-github-actions/flatpak-builder-action@v6
+        with:
+          bundle: neocalc.flatpak
+          manifest-path: flatpak/com.niltonperimneto.neocalc.yml
+          cache-key: flatpak-builder-${{ github.sha }}
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NeoCalc-Flatpak
+          path: neocalc.flatpak
+
   build-windows:
     runs-on: windows-latest
     steps:
@@ -75,3 +93,42 @@ jobs:
         with:
           name: NeoCalc-Windows
           path: dist/NeoCalc/
+
+  create-release:
+    needs: [build-linux, build-flatpak, build-windows]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+      
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          cd artifacts
+          
+          # Create archives for each platform
+          if [ -d "NeoCalc-Linux" ]; then
+            tar -czf ../release-assets/NeoCalc-Linux.tar.gz NeoCalc-Linux/
+          fi
+          
+          if [ -d "NeoCalc-Flatpak" ]; then
+            cp NeoCalc-Flatpak/neocalc.flatpak ../release-assets/
+          fi
+          
+          if [ -d "NeoCalc-Windows" ]; then
+            zip -r ../release-assets/NeoCalc-Windows.zip NeoCalc-Windows/
+          fi
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release-assets/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
