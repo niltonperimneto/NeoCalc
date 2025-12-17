@@ -20,12 +20,12 @@ jobs:
       - name: Build
         run: |
           export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
-          cargo build --release --manifest-path rust_runner/Cargo.toml
+          cargo build --release --manifest-path rust_frontend/Cargo.toml
           
       - name: Bundle
         run: |
           mkdir -p dist/NeoCalc
-          cp target/release/neocalc_runner dist/NeoCalc/NeoCalc
+          cp target/release/rust_frontend dist/NeoCalc/NeoCalc
           cp -r python_gui dist/NeoCalc/
           cp README.md dist/NeoCalc/
           
@@ -40,12 +40,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Install Flatpak tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+      
       - name: Build Flatpak
-        uses: flatpak/flatpak-github-actions/flatpak-builder-action@v6
-        with:
-          bundle: neocalc.flatpak
-          manifest-path: flatpak/com.niltonperimneto.neocalc.yml
-          cache-key: flatpak-builder-${{ github.sha }}
+        run: |
+          # Create a simple manifest if it doesn't exist
+          mkdir -p flatpak
+          if [ ! -f flatpak/com.niltonperimneto.neocalc.yml ]; then
+            cat > flatpak/com.niltonperimneto.neocalc.yml << 'EOF'
+          app-id: com.niltonperimneto.neocalc
+          runtime: org.gnome.Platform
+          runtime-version: '46'
+          sdk: org.gnome.Sdk
+          command: neocalc
+          modules:
+            - name: neocalc
+              buildsystem: simple
+              build-commands:
+                - cargo build --release --manifest-path rust_frontend/Cargo.toml
+                - install -Dm755 target/release/rust_frontend /app/bin/neocalc
+                - mkdir -p /app/share/neocalc
+                - cp -r python_gui /app/share/neocalc/
+              sources:
+                - type: dir
+                  path: .
+          EOF
+          fi
+          flatpak-builder --user --disable-rofiles-fuse --repo=repo build-dir flatpak/com.niltonperimneto.neocalc.yml
+          flatpak build-bundle repo neocalc.flatpak com.niltonperimneto.neocalc
       
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -75,13 +100,13 @@ jobs:
         shell: msys2 {0}
         run: |
           export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
-          cargo build --release --manifest-path rust_runner/Cargo.toml
+          cargo build --release --manifest-path rust_frontend/Cargo.toml
           
       - name: Bundle
         shell: msys2 {0}
         run: |
           mkdir -p dist/NeoCalc
-          cp target/release/neocalc_runner.exe dist/NeoCalc/NeoCalc.exe
+          cp target/release/rust_frontend.exe dist/NeoCalc/NeoCalc.exe
           cp -r python_gui dist/NeoCalc/
           # Copy DLLs (Simplified approach, typically needs ldd/ntldd)
           # For a quick CI artifact, just the exe + python might fail without DLLs, 

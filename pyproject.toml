@@ -5,17 +5,17 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "NeoCalc"
 version = "1.0"
-description = "A simple calculator made in Python with the GTK4 toolkit."
+description = "Calculator made in GTK4."
 authors = [
     { name="Nilton Perim Neto", email="niltonperimneto@gmail.com" }
 ]
 license = "GPL-3.0-or-later"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 
 dependencies = [
-    "PyGObject>=3.46.0",
-    "pycairo>=1.25.0",
+    "PyGObject>=3.54.5",
+    "pycairo>=1.29.0",
 ]
 
 [project.urls]

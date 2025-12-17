@@ -1,8 +1,0 @@
-[package]
-name = "neocalc_runner"
-version = "1.0.0"
-edition = "2024"
-
-[dependencies]
-pyo3 = { version = "0.20", features = ["auto-initialize"] }
-neocalc_backend = { path = "../rust_extension" }
