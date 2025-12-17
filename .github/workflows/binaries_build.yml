@@ -118,7 +118,6 @@ jobs:
           # We need Python, GTK4, Adwaita, and their dependencies
           # Using ldd to find dependencies would be better, but for now we bruteforce common ones
           cp /mingw64/bin/libpython3*.dll dist/NeoCalc/
-          cp /mingw64/bin/python3*.dll dist/NeoCalc/
           cp /mingw64/bin/libgtk-4-1.dll dist/NeoCalc/
           cp /mingw64/bin/libadwaita-1-0.dll dist/NeoCalc/
           cp /mingw64/bin/libgio-2.0-0.dll dist/NeoCalc/
