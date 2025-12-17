@@ -1,0 +1,158 @@
+name: Build NeoCalc
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-4-dev libadwaita-1-dev python3-dev libpython3-dev cargo
+          
+      - name: Build
+        run: |
+          export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
+          cargo build --release --manifest-path rust_runner/Cargo.toml
+          
+      - name: Bundle
+        run: |
+          mkdir -p dist/NeoCalc
+          cp target/release/neocalc_runner dist/NeoCalc/NeoCalc
+          cp -r python_gui dist/NeoCalc/
+          cp README.md dist/NeoCalc/
+          
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NeoCalc-Linux
+          path: dist/NeoCalc/
+
+  build-flatpak:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Flatpak tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+      
+      - name: Build Flatpak
+        run: |
+          # Create a simple manifest if it doesn't exist
+          mkdir -p flatpak
+          if [ ! -f flatpak/com.niltonperimneto.neocalc.yml ]; then
+            cat > flatpak/com.niltonperimneto.neocalc.yml << 'EOF'
+          app-id: com.niltonperimneto.neocalc
+          runtime: org.gnome.Platform
+          runtime-version: '46'
+          sdk: org.gnome.Sdk
+          command: neocalc_runner
+          modules:
+            - name: neocalc
+              buildsystem: simple
+              build-commands:
+                - install -Dm755 neocalc_runner /app/bin/neocalc_runner
+                - mkdir -p /app/share/neocalc
+                - cp -r python_gui /app/share/neocalc/
+              sources:
+                - type: dir
+                  path: .
+          EOF
+          fi
+          flatpak-builder --user --disable-rofiles-fuse --repo=repo build-dir flatpak/com.niltonperimneto.neocalc.yml
+          flatpak build-bundle repo neocalc.flatpak com.niltonperimneto.neocalc
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NeoCalc-Flatpak
+          path: neocalc.flatpak
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: >-
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-rust
+            mingw-w64-x86_64-gtk4
+            mingw-w64-x86_64-libadwaita
+            mingw-w64-x86_64-python
+            mingw-w64-x86_64-python-gobject
+          msystem: MINGW64
+          
+      - name: Build
+        shell: msys2 {0}
+        run: |
+          export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
+          cargo build --release --manifest-path rust_runner/Cargo.toml
+          
+      - name: Bundle
+        shell: msys2 {0}
+        run: |
+          mkdir -p dist/NeoCalc
+          cp target/release/neocalc_runner.exe dist/NeoCalc/NeoCalc.exe
+          cp -r python_gui dist/NeoCalc/
+          # Copy DLLs (Simplified approach, typically needs ldd/ntldd)
+          # For a quick CI artifact, just the exe + python might fail without DLLs, 
+          # but properly bundling DLLs is complex. 
+          # We will just verify the build for now.
+          
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NeoCalc-Windows
+          path: dist/NeoCalc/
+
+  create-release:
+    needs: [build-linux, build-flatpak, build-windows]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+      
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          cd artifacts
+          
+          # Create archives for each platform
+          if [ -d "NeoCalc-Linux" ]; then
+            tar -czf ../release-assets/NeoCalc-Linux.tar.gz NeoCalc-Linux/
+          fi
+          
+          if [ -d "NeoCalc-Flatpak" ]; then
+            cp NeoCalc-Flatpak/neocalc.flatpak ../release-assets/
+          fi
+          
+          if [ -d "NeoCalc-Windows" ]; then
+            zip -r ../release-assets/NeoCalc-Windows.zip NeoCalc-Windows/
+          fi
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release-assets/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
