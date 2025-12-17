@@ -1,4 +1,5 @@
 import neocalc_backend
+from neocalc_backend import DisplayManager, CalculatorManager
 import asyncio
 
 class CalculatorLogic:

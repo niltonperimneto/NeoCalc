@@ -93,8 +93,12 @@ impl Calculator {
     }
 }
 
+mod managers;
+
 #[pymodule]
 pub fn neocalc_backend(m: &Bound<PyModule>) -> PyResult<()> {
     m.add_class::<Calculator>()?;
+    m.add_class::<managers::DisplayManager>()?;
+    m.add_class::<managers::CalculatorManager>()?;
     Ok(())
 }

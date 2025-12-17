@@ -10,8 +10,7 @@ from ..styling import StyleManager
 from ..actions import ActionRegistry
 from .sidebar import SidebarView
 from .header import HeaderView
-from .display_manager import DisplayManager
-from .calc_manager import CalculatorManager
+from ..backend import DisplayManager, CalculatorManager
 
 class Calculator(Adw.ApplicationWindow):
     def __init__(self, app):
@@ -25,9 +24,12 @@ class Calculator(Adw.ApplicationWindow):
         self.action_registry = ActionRegistry(self)
         self.setup_layout()
         
-        # --- Managers ---
+        # --- Managers (Rust Powered) ---
         self.display_manager = DisplayManager(self._display_placeholder)
         self.calc_manager = CalculatorManager(self, self.tab_view, self.sidebar_view, self.display_manager)
+        
+        # Connect signals for Rust manager (it delegates back to its own methods)
+        self.calc_manager.setup_signals(self.calc_manager)
         
         # --- Initialization ---
         self.calc_manager.add_calculator_instance()
