@@ -18,11 +18,12 @@ class CalculatorLogic:
         if current_text == "Error":
             current_text = ""
         
-        # Convert mathematical symbols to operators
+        # Convert mathematical symbols to operators/constants
         symbol_map = {
             "÷": "/",
             "×": "*",
-            "−": "-"
+            "−": "-",
+            "π": "pi",
         }
         new_text = symbol_map.get(new_text, new_text)
         
@@ -35,7 +36,14 @@ class CalculatorLogic:
         """
         if current_text == "Error":
             current_text = ""
-        return current_text + func_name + "("
+            
+        # Map function symbols if needed
+        func_map = {
+            "√": "sqrt"
+        }
+        effective_name = func_map.get(func_name, func_name)
+        
+        return current_text + effective_name + "("
 
     @staticmethod
     def clear() -> str:

@@ -110,11 +110,22 @@ class Calculator(Adw.ApplicationWindow):
         new_state = not current_state
         
         if new_state:
-            self.set_default_size(600, 500)
-            GLib.timeout_add(100, lambda: self.split_view.set_show_sidebar(True) or False)
+            # Force window to expand by setting minimum size
+            # This ensures allocation is sufficient before showing sidebar
+            self.set_size_request(600, 500)
+            
+            # Use a slightly longer timeout to let the WM handle the resize
+            GLib.timeout_add(150, self._show_sidebar_after_resize)
         else:
             self.split_view.set_show_sidebar(False)
+            # Shrink back
             GLib.timeout_add(100, lambda: self.set_default_size(320, 500) or False)
+
+    def _show_sidebar_after_resize(self):
+        self.split_view.set_show_sidebar(True)
+        # Reset minimum size to allow resizing smaller if needed (but keep logic consistent)
+        self.set_size_request(320, 400)
+        return False
 
     def add_calculator_instance(self):
         self.instance_count += 1
@@ -145,10 +156,24 @@ class Calculator(Adw.ApplicationWindow):
         row_box.set_margin_top(4)
         row_box.set_margin_bottom(4)
         
+        # Row Header (Title + Close Button)
+        header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        
         title_label = Gtk.Label(label=title)
         title_label.set_xalign(0)
+        title_label.set_hexpand(True)
         title_label.add_css_class("heading")
-        row_box.append(title_label)
+        header_box.append(title_label)
+        
+        close_btn = Gtk.Button(icon_name="window-close-symbolic")
+        close_btn.add_css_class("flat")
+        close_btn.add_css_class("circular")
+        close_btn.set_tooltip_text("Close Calculation")
+        # Prevent row selection when clicking close
+        close_btn.connect("clicked", lambda b: self.on_close_calculator_from_sidebar(calc_widget))
+        header_box.append(close_btn)
+        
+        row_box.append(header_box)
         
         preview_label = Gtk.Label(label="0")
         preview_label.set_xalign(1)
@@ -193,6 +218,17 @@ class Calculator(Adw.ApplicationWindow):
 
     def on_close_calculator_clicked(self, tab_view, page):
         tab_view.close_page(page)
+        if self.tab_view.get_n_pages() == 0:
+            self.add_calculator_instance()
+            
+    def on_close_calculator_from_sidebar(self, calc_widget):
+        n_pages = self.tab_view.get_n_pages()
+        for i in range(n_pages):
+            page = self.tab_view.get_nth_page(i)
+            if hasattr(page, 'calc_widget') and page.calc_widget is calc_widget:
+                self.tab_view.close_page(page)
+                break
+        
         if self.tab_view.get_n_pages() == 0:
             self.add_calculator_instance()
 

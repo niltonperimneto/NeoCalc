@@ -6,6 +6,8 @@ use std::sync::{Arc, Mutex};
 
 mod engine;
 
+use num_complex::Complex64;
+
 /// The interface between Python (Dynamic Bliss) and Rust (Static Pain).
 #[pyclass]
 #[derive(Default)]
@@ -13,6 +15,26 @@ struct Calculator {
     // I had to use Arc<Mutex<>> because the borrow checker kept yelling at me.
     // I just want to share a list, why is it so hard?
     history: Arc<Mutex<Vec<String>>>,
+}
+
+fn format_complex(c: Complex64) -> String {
+    let re = c.re;
+    let im = c.im;
+    let epsilon = 1e-10;
+
+    if im.abs() < epsilon {
+        if re.fract().abs() < epsilon { (re.round() as i64).to_string() } else { re.to_string() }
+    } else {
+        let re_str = if re.fract().abs() < epsilon { (re.round() as i64).to_string() } else { re.to_string() };
+        let im_abs = im.abs();
+        let im_str = if im_abs.fract().abs() < epsilon { (im_abs.round() as i64).to_string() } else { im_abs.to_string() };
+        
+        if re.abs() < epsilon {
+             format!("{}i", if im < 0.0 { format!("-{}", im_str) } else { im_str })
+        } else {
+             format!("{} {} {}i", re_str, if im < 0.0 { "-" } else { "+" }, im_str)
+        }
+    }
 }
 
 #[pymethods]
@@ -29,7 +51,7 @@ impl Calculator {
         // Calling my 'engine'. It's just a file I copied from StackOverflow (kidding... mostly).
         let res = engine::evaluate(&expression);
         let output = match res {
-            Ok(v) => if v.fract() == 0.0 { (v as i64).to_string() } else { v.to_string() },
+            Ok(c) => format_complex(c),
             Err(_) => "Error".to_string(), // Error handling is hard, let's just return a string.
         };
 
@@ -47,7 +69,7 @@ impl Calculator {
         tokio::future_into_py(py, async move {
             let res = engine::evaluate(&expression);
             let output = match res {
-                Ok(v) => if v.fract() == 0.0 { (v as i64).to_string() } else { v.to_string() },
+                Ok(c) => format_complex(c),
                 Err(_) => "Error".to_string(),
             };
 
