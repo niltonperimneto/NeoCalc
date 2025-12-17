@@ -135,6 +135,9 @@ jobs:
           cp -r /ucrt64/lib/python3.* dist/NeoCalc/lib/
           
           echo "DLLs copied."
+          mkdir -p dist/NeoCalc/lib
+          cp -r /ucrt64/lib/python3.* dist/NeoCalc/lib/
+          
           echo "DLLs copied."
       - name: Upload Artifact
         uses: actions/upload-artifact@v4

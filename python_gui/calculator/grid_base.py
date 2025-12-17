@@ -27,6 +27,15 @@ class CalculatorGrid(Gtk.Grid):
         expression = self.calculator.entry.get_text()
         result_text = self.calculator.logic.evaluate(expression)
         self.calculator.entry.set_text(result_text)
+        current = self.calculator.get_expression()
+        new_text = self.calculator.logic.append_text(current, button.get_label())
+        self.calculator.set_expression(new_text)
+
+    def on_equal_clicked(self, button):
+        """Handle evaluation."""
+        expression = self.calculator.get_expression()
+        result_text = self.calculator.logic.evaluate(expression)
+        self.calculator.set_expression(result_text)
         
         # Update history display
         if hasattr(self.calculator, 'update_history_display'):
@@ -50,3 +59,10 @@ class CalculatorGrid(Gtk.Grid):
         current = self.calculator.entry.get_text()
         new_text = self.calculator.logic.append_function(current, button.get_label())
         self.calculator.entry.set_text(new_text)
+        self.calculator.set_expression(self.calculator.logic.clear())
+
+    def on_func_clicked(self, button):
+        """Handle scientific function clicks."""
+        current = self.calculator.get_expression()
+        new_text = self.calculator.logic.append_function(current, button.get_label())
+        self.calculator.set_expression(new_text)

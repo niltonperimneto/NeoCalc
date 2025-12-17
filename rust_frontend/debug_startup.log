@@ -1,0 +1,40 @@
+Starting CalculatorApp main...
+sys.argv: ['']
+Running with argv: ['neocalc']
+Startup signal received.
+Startup completed.
+Activating application...
+Loaded CSS from /home/teacher/NeoCalc/python_gui/calculator/style.css
+Calculator window created.
+Calculator window presented.
+Traceback (most recent call last):
+  File "/home/teacher/NeoCalc/python_gui/calculator/actions.py", line 77, in on_switch_calculator
+    self.window.switch_display_for(page.calc_widget)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Calculator' object has no attribute 'switch_display_for'
+Traceback (most recent call last):
+  File "/home/teacher/NeoCalc/python_gui/calculator/actions.py", line 77, in on_switch_calculator
+    self.window.switch_display_for(page.calc_widget)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Calculator' object has no attribute 'switch_display_for'
+Traceback (most recent call last):
+  File "/home/teacher/NeoCalc/python_gui/calculator/actions.py", line 77, in on_switch_calculator
+    self.window.switch_display_for(page.calc_widget)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Calculator' object has no attribute 'switch_display_for'
+Traceback (most recent call last):
+  File "/home/teacher/NeoCalc/python_gui/calculator/actions.py", line 77, in on_switch_calculator
+    self.window.switch_display_for(page.calc_widget)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Calculator' object has no attribute 'switch_display_for'
+Traceback (most recent call last):
+  File "/home/teacher/NeoCalc/python_gui/calculator/actions.py", line 77, in on_switch_calculator
+    self.window.switch_display_for(page.calc_widget)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Calculator' object has no attribute 'switch_display_for'
+Traceback (most recent call last):
+  File "/home/teacher/NeoCalc/python_gui/calculator/actions.py", line 77, in on_switch_calculator
+    self.window.switch_display_for(page.calc_widget)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Calculator' object has no attribute 'switch_display_for'
+App run finished with: 0

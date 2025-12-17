@@ -15,15 +15,13 @@ class CalculatorWidget(Gtk.Box):
         
         self.parent_window = None  # Will be set by window when adding instance
         self.logic = CalculatorLogic() # Instance-specific logic
+        self.logic = CalculatorLogic() # Instance-specific logic/backend
+        self.expression_state = "0"
 
-        # Model entry (kept hidden) and a separate display label
-        # Grids interact with `self.entry` as before; we update the
-        # header display label when the entry changes.
-        self.entry = Gtk.Entry()
-        self.entry.set_hexpand(True)
-        self.entry.set_vexpand(False)
-        self.entry.set_alignment(1.0)  # Right align
-        self.entry.add_css_class("calc-entry")
+        # Key Controller for input handling
+        key_controller = Gtk.EventControllerKey()
+        key_controller.connect("key-pressed", self.on_key_pressed)
+        self.add_controller(key_controller)
 
         # History display label (shows previous calculations)
         self.history_label = Gtk.Label()
@@ -40,8 +38,9 @@ class CalculatorWidget(Gtk.Box):
         self.display_label.set_justify(Gtk.Justification.RIGHT)
         self.display_label.set_wrap(True)
         self.display_label.add_css_class("calc-entry-display")
+        self.display_label.set_text("0")
 
-        # Create the display box once (not on every get_display_widget call)
+        # Create the display box once
         self.display_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         
         # Scrolled window for history
@@ -54,11 +53,6 @@ class CalculatorWidget(Gtk.Box):
         
         self.display_box.append(history_scroll)
         self.display_box.append(self.display_label)
-
-        # Keep the entry as the data model; update label on changes
-        self.entry.connect(
-            "changed", lambda e: self.display_label.set_text(e.get_text())
-        )
 
         # Main content area with grids
         main_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
@@ -74,18 +68,11 @@ class CalculatorWidget(Gtk.Box):
         grid_box.set_vexpand(True)
         main_content.append(grid_box)
 
-        # View Switcher Title logic is tricky inside a widget because the title is in the Window Header.
-        # However, the ViewStack is here.
-        # We need to expose the ViewStack so the Window can bind its SwitcherTitle to it.
-
+        # View Switcher Title logic
         self.view_stack = Adw.ViewStack()
 
         # Standard Grid Page
-        standard_page = Adw.ViewStackPage()
-
-        # Pass 'self' as the "calculator_window" expected by Grids
-        # The Grids expect `self.calculator` to have an `entry`.
-        # Since 'self' here is CalculatorWidget and it has 'entry', it handles the interface implicitly.
+        # Pass 'self' as the "calculator_window" interface
         button_grid = ButtonGrid(self)
         self.view_stack.add_titled(button_grid, "standard", "Standard")
         self.view_stack.get_page(button_grid).set_icon_name("view-grid-symbolic")
@@ -101,12 +88,17 @@ class CalculatorWidget(Gtk.Box):
         self.append(main_content)
         self.set_vexpand(True)
 
+        # Ensure we can accept focus for key events
+        self.set_focusable(True)
+
+        # Callback for external listeners (like sidebar preview)
+        self.on_expression_changed = None
+
     def get_stack(self):
         return self.view_stack
 
     def get_display_widget(self):
         """Return the widget suitable for placing in the header title area."""
-        # Update history display and return the pre-created display box
         self.update_history_display()
         return self.display_box
     
@@ -124,4 +116,63 @@ class CalculatorWidget(Gtk.Box):
         """Trigger parent window to update calculator name"""
         if self.parent_window and hasattr(self.parent_window, 'update_calculator_name'):
             self.parent_window.update_calculator_name(self)
+
+    # --- input interface for Grids ---
+    def get_expression(self):
+        return self.expression_state
+
+    def set_expression(self, text):
+        self.expression_state = text
+        self.display_label.set_text(text)
+        if self.on_expression_changed:
+            self.on_expression_changed(text)
+
+    # --- input handling ---
+    def on_key_pressed(self, controller, keyval, keycode, state):
+        # Handle digits and operators directly
+        from gi.repository import Gdk
+        
+        # Determine character
+        key_char = Gdk.keyval_to_unicode(keyval)
+        valid_chars = "0123456789.+-*/^%()"
+        
+        if key_char and chr(key_char) in valid_chars:
+            new_text = self.logic.append_text(self.expression_state, chr(key_char))
+            self.set_expression(new_text)
+            return True
+            
+        name = Gdk.keyval_name(keyval)
+        
+        if name == "BackSpace":
+             # Poor man's backspace if backend doesn't support it directly yet?
+             # Actually backend usually just replaces text.
+             # Let's assume user wants to delete last char. 
+             # Logic refactor might be needed for proper backspace if complex.
+             # For now: simple string slice if state matches logic?
+             # No, 'logic.append_text' handles logic. 
+             # We need 'logic.backspace'? Or just manual manipulation.
+             if len(self.expression_state) > 0:
+                 # Cleanest is to let logic handle it, but logic API is 'append_text' or 'evaluate'.
+                 # Let's simple slice for now, assuming logic is stateless regarding *undo* (it mostly is).
+                 # Wait, 'append_text' might do complex formatting.
+                 # Ideally we add 'delete_last' to logic. But for now:
+                 if len(self.expression_state) == 1:
+                     self.set_expression("0")
+                 elif self.expression_state != "0":
+                     self.set_expression(self.expression_state[:-1])
+             return True
+
+        elif name in ("Return", "KP_Enter"):
+            # Evaluate
+            result = self.logic.evaluate(self.expression_state)
+            self.set_expression(result)
+            self.update_history_display()
+            self.trigger_name_update()
+            return True
+        
+        elif name == "Escape":
+            self.set_expression(self.logic.clear())
+            return True
+
+        return False
 
