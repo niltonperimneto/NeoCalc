@@ -1,6 +1,7 @@
 import gi
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk, Gdk
+gi.require_version("Adw", "1")
+from gi.repository import Gtk, Gdk, Adw
 import os
 
 class StyleManager:
@@ -23,3 +24,13 @@ class StyleManager:
             print(f"Loaded CSS from {css_path}")
         except Exception as e:
             print(f"Failed to load CSS: {e}")
+
+    @staticmethod
+    def toggle_theme():
+        """Toggle between light and dark application theme."""
+        style_manager = Adw.StyleManager.get_default()
+        is_dark = style_manager.get_dark()
+        style_manager.set_color_scheme(
+            Adw.ColorScheme.FORCE_LIGHT if is_dark else Adw.ColorScheme.FORCE_DARK
+        )
+        return not is_dark  # Return new state (True if dark)

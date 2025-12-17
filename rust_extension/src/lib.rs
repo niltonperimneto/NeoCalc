@@ -1,268 +1,100 @@
 use pyo3::prelude::*;
-use pyo3::wrap_pyfunction;
+use pyo3::types::PyModule;
+use pyo3::Bound;
+use pyo3_async_runtimes::tokio;
+use std::sync::{Arc, Mutex};
 
+mod engine;
 
-/// Safely evaluates a mathematical expression.
-/// "Safely" here means we try not to let Python blow up your computer,
-/// but no guarantees if you divide by zero in a philosophical sense.
-fn safe_eval_inner(expression: &str) -> Result<f64, String> {
-    // Basic parser implementation because we love reinventing wheels.
-    // Expression grammar (aka hieroglyphics):
-    // expr   -> term { (+|-) term }
-    // term   -> factor { (*|/) factor }
-    // factor -> NUMBER | ( expr ) | function( expr ) | - factor | IDENTIFIER (constants)
+use num_complex::Complex64;
 
-    let tokens = tokenize(expression).map_err(|e| e)?;
-    let mut pos = 0;
+/// The interface between Python (Dynamic Bliss) and Rust (Static Pain).
+#[pyclass]
+#[derive(Default)]
+struct Calculator {
+    // I had to use Arc<Mutex<>> because the borrow checker kept yelling at me.
+    // I just want to share a list, why is it so hard?
+    history: Arc<Mutex<Vec<String>>>,
+}
 
-    let result = parse_expr(&tokens, &mut pos)?;
-    
-    if pos < tokens.len() {
-        return Err(format!("Unexpected token at end of expression: {:?}", tokens[pos]));
+fn format_complex(c: Complex64) -> String {
+    let re = c.re;
+    let im = c.im;
+    let epsilon = 1e-10;
+
+    if im.abs() < epsilon {
+        if re.fract().abs() < epsilon { (re.round() as i64).to_string() } else { re.to_string() }
+    } else {
+        let re_str = if re.fract().abs() < epsilon { (re.round() as i64).to_string() } else { re.to_string() };
+        let im_abs = im.abs();
+        let im_str = if im_abs.fract().abs() < epsilon { (im_abs.round() as i64).to_string() } else { im_abs.to_string() };
+        
+        if re.abs() < epsilon {
+             format!("{}i", if im < 0.0 { format!("-{}", im_str) } else { im_str })
+        } else {
+             format!("{} {} {}i", re_str, if im < 0.0 { "-" } else { "+" }, im_str)
+        }
     }
-    
-    Ok(result)
 }
 
-#[derive(Debug, Clone)]
-enum Token {
-    Number(f64),
-    Plus,
-    Minus,
-    Multiply,
-    Divide,
-    Power,
-    LParen,
-    RParen,
-    Identifier(String),
-}
+#[pymethods]
+impl Calculator {
+    #[new]
+    fn new() -> Self {
+        Calculator {
+            // Arc::new(Mutex::new(...)) - I feel like I'm casting a spell.
+            history: Arc::new(Mutex::new(Vec::new())),
+        }
+    }
 
-fn tokenize(expr: &str) -> Result<Vec<Token>, String> {
-    let mut tokens = Vec::new();
-    let chars: Vec<char> = expr.chars().collect();
-    let mut i = 0;
+    fn evaluate(&self, expression: String) -> String {
+        // Calling my 'engine'. It's just a file I copied from StackOverflow (kidding... mostly).
+        let res = engine::evaluate(&expression);
+        let output = match res {
+            Ok(c) => format_complex(c),
+            Err(_) => "Error".to_string(), // Error handling is hard, let's just return a string.
+        };
 
-    while i < chars.len() {
-        match chars[i] {
-            ' ' | '\t' => i += 1,
-            '0'..='9' | '.' => {
-                let start = i;
-                while i < chars.len() && (chars[i].is_ascii_digit() || chars[i] == '.') {
-                    i += 1;
+        if output != "Error" && !expression.trim().is_empty() {
+            // lock()? unwrap()? I hope this doesn't panic.
+            if let Ok(mut h) = self.history.lock() {
+                h.push(format!("{} = {}", expression, output));
+            }
+        }
+        output
+    }
+
+    fn evaluate_async<'py>(&self, py: Python<'py>, expression: String) -> PyResult<Bound<'py, PyAny>> {
+        let history = self.history.clone();
+        tokio::future_into_py(py, async move {
+            let res = engine::evaluate(&expression);
+            let output = match res {
+                Ok(c) => format_complex(c),
+                Err(_) => "Error".to_string(),
+            };
+
+            if output != "Error" && !expression.trim().is_empty() {
+                if let Ok(mut h) = history.lock() {
+                    h.push(format!("{} = {}", expression, output));
                 }
-                let num_str: String = chars[start..i].iter().collect();
-                let num = num_str.parse::<f64>().map_err(|_| "Invalid number")?;
-                tokens.push(Token::Number(num));
             }
-            '+' => { tokens.push(Token::Plus); i += 1; }
-            '-' => { tokens.push(Token::Minus); i += 1; }
-            '*' => {
-                if i + 1 < chars.len() && chars[i+1] == '*' {
-                     tokens.push(Token::Power); i += 2;
-                } else {
-                     tokens.push(Token::Multiply); i += 1;
-                }
-            }
-            '/' => { tokens.push(Token::Divide); i += 1; }
-            '^' => { tokens.push(Token::Power); i += 1; }
-            '(' => { tokens.push(Token::LParen); i += 1; }
-            ')' => { tokens.push(Token::RParen); i += 1; }
-            'a'..='z' | 'A'..='Z' => {
-                let start = i;
-                while i < chars.len() && chars[i].is_ascii_alphabetic() {
-                    i += 1;
-                }
-                tokens.push(Token::Identifier(chars[start..i].iter().collect()));
-            }
-            _ => return Err(format!("Unexpected character: {}", chars[i])),
-        }
-    }
-    Ok(tokens)
-}
-
-fn parse_expr(tokens: &[Token], pos: &mut usize) -> Result<f64, String> {
-    let mut left = parse_term(tokens, pos)?;
-
-    while *pos < tokens.len() {
-        match tokens[*pos] {
-            Token::Plus => {
-                *pos += 1;
-                left += parse_term(tokens, pos)?;
-            }
-            Token::Minus => {
-                *pos += 1;
-                left -= parse_term(tokens, pos)?;
-            }
-            _ => break,
-        }
-    }
-    Ok(left)
-}
-
-fn parse_term(tokens: &[Token], pos: &mut usize) -> Result<f64, String> {
-    let mut left = parse_factor(tokens, pos)?;
-
-    while *pos < tokens.len() {
-        match tokens[*pos] {
-            Token::Multiply => {
-                *pos += 1;
-                left *= parse_factor(tokens, pos)?;
-            }
-            Token::Divide => {
-                *pos += 1;
-                let divisor = parse_factor(tokens, pos)?;
-                if divisor == 0.0 {
-                    return Err("Division by zero".to_string());
-                }
-                left /= divisor;
-            }
-            _ => break,
-        }
-    }
-    Ok(left)
-}
-
-fn parse_factor(tokens: &[Token], pos: &mut usize) -> Result<f64, String> {
-    // Handle Unary Minus
-    if *pos < tokens.len() {
-        if let Token::Minus = tokens[*pos] {
-             *pos += 1;
-             return Ok(-parse_factor(tokens, pos)?);
-        }
+            Ok(output)
+        })
     }
 
-    let val = parse_base(tokens, pos)?;
-    
-    // Handle Power
-    if *pos < tokens.len() {
-        if let Token::Power = tokens[*pos] {
-            *pos += 1;
-            let exponent = parse_factor(tokens, pos)?; // Right associative? usually power is. let's just do simple
-            return Ok(val.powf(exponent));
-        }
+    fn get_history(&self) -> Vec<String> {
+        self.history.lock().unwrap().clone()
     }
     
-    Ok(val)
-}
-
-fn parse_base(tokens: &[Token], pos: &mut usize) -> Result<f64, String> {
-    if *pos >= tokens.len() {
-        return Err("Unexpected end of expression".to_string());
-    }
-
-    match &tokens[*pos] {
-        Token::Number(n) => {
-            *pos += 1;
-            Ok(*n)
-        }
-        Token::Identifier(s) => {
-            *pos += 1;
-            match s.as_str() {
-                "sin" => {
-                    ensure_lparen(tokens, pos)?;
-                    let val = parse_expr(tokens, pos)?;
-                    ensure_rparen(tokens, pos)?;
-                    Ok(val.sin())
-                }
-                "cos" => {
-                    ensure_lparen(tokens, pos)?;
-                    let val = parse_expr(tokens, pos)?;
-                    ensure_rparen(tokens, pos)?;
-                    Ok(val.cos())
-                }
-                "tan" => {
-                    ensure_lparen(tokens, pos)?;
-                    let val = parse_expr(tokens, pos)?;
-                    ensure_rparen(tokens, pos)?;
-                    Ok(val.tan())
-                }
-                "log" => {
-                    ensure_lparen(tokens, pos)?;
-                    let val = parse_expr(tokens, pos)?;
-                    ensure_rparen(tokens, pos)?;
-                    Ok(val.log10())
-                }
-                "ln" => {
-                    ensure_lparen(tokens, pos)?;
-                    let val = parse_expr(tokens, pos)?;
-                    ensure_rparen(tokens, pos)?;
-                    Ok(val.ln())
-                }
-                "sqrt" => {
-                    ensure_lparen(tokens, pos)?;
-                    let val = parse_expr(tokens, pos)?;
-                    ensure_rparen(tokens, pos)?;
-                    if val < 0.0 { return Err("Sqrt of negative number".to_string()); }
-                    Ok(val.sqrt())
-                }
-                "pi" => Ok(std::f64::consts::PI),
-                "e" => Ok(std::f64::consts::E),
-                _ => Err(format!("Unknown function or constant: {}", s)),
-            }
-        }
-        Token::LParen => {
-            *pos += 1;
-            let val = parse_expr(tokens, pos)?;
-            if *pos >= tokens.len() || !matches!(tokens[*pos], Token::RParen) {
-                return Err("Missing matching parenthesis".to_string());
-            }
-            *pos += 1;
-            Ok(val)
-        }
-        _ => Err(format!("Unexpected token: {:?}", tokens[*pos])),
-    }
-}
-
-fn ensure_lparen(tokens: &[Token], pos: &mut usize) -> Result<(), String> {
-    if *pos < tokens.len() {
-        if let Token::LParen = tokens[*pos] {
-            *pos += 1;
-            return Ok(());
+    fn clear_history(&self) {
+        if let Ok(mut h) = self.history.lock() {
+            h.clear();
         }
     }
-    Err("Expected '(' after function name".to_string())
-}
-
-fn ensure_rparen(tokens: &[Token], pos: &mut usize) -> Result<(), String> {
-    if *pos < tokens.len() {
-        if let Token::RParen = tokens[*pos] {
-            *pos += 1;
-            return Ok(());
-        }
-    }
-    Err("Expected ')'".to_string())
-}
-
-
-#[pyfunction]
-fn evaluate(expression: String) -> PyResult<String> {
-    match safe_eval_inner(&expression) {
-        Ok(val) => {
-            // Check if it is integer
-            if val.fract() == 0.0 {
-                Ok((val as i64).to_string())
-            } else {
-                Ok(val.to_string())
-            }
-        }
-        Err(_) => Ok("Error".to_string()),
-    }
-}
-
-#[pyfunction]
-fn evaluate_async(py: Python<'_>, expression: String) -> PyResult<&PyAny> {
-    pyo3_asyncio::tokio::future_into_py(py, async move {
-        // Simulate async work or just run the calculation
-        // In a real scenario, this might involve database calls or heavy computation
-        let result = evaluate(expression);
-        result
-    })
 }
 
 #[pymodule]
-pub fn neocalc_backend(_py: Python, m: &PyModule) -> PyResult<()> {
-    // Exporting the chaos to Python.
-    m.add_function(wrap_pyfunction!(evaluate, m)?)?;
-    m.add_function(wrap_pyfunction!(evaluate_async, m)?)?;
+pub fn neocalc_backend(m: &Bound<PyModule>) -> PyResult<()> {
+    m.add_class::<Calculator>()?;
     Ok(())
 }

@@ -3,46 +3,82 @@ import asyncio
 
 class CalculatorLogic:
     """
-    Handles higher-level calculator logic, such as input processing and result formatting.
-    Decouples UI events from state manipulation.
+    Python wrapper for the Rust backend.
+    I'm staying here in Python where the types are made up and the lifetimes don't matter.
     """
+    
+    # Static instance. I hope Rust handles static memory correctly.
+    _calc = neocalc_backend.Calculator()
 
     @staticmethod
     def append_text(current_text: str, new_text: str) -> str:
         """
-        Appends text to the current expression, handling 'Error' state.
+        String manipulation. Python is good at this. Rust makes me convert String to &str back to String.
         """
         if current_text == "Error":
-            return new_text
+            current_text = ""
+        
+        # Convert mathematical symbols to operators/constants
+        symbol_map = {
+            "÷": "/",
+            "×": "*",
+            "−": "-",
+            "π": "pi",
+        }
+        new_text = symbol_map.get(new_text, new_text)
+        
         return current_text + new_text
 
     @staticmethod
     def append_function(current_text: str, func_name: str) -> str:
         """
-        Appends a function call (e.g., 'sin(') to the current expression.
+        Appending a function. Simple. No 'Result<Option<...>>' here.
         """
         if current_text == "Error":
             current_text = ""
-        return current_text + func_name + "("
+            
+        # Map function symbols if needed
+        func_map = {
+            "√": "sqrt"
+        }
+        effective_name = func_map.get(func_name, func_name)
+        
+        return current_text + effective_name + "("
 
     @staticmethod
     def clear() -> str:
+        # Just return an empty string. No allocations... wait, everything is an allocation in Python.
         return ""
 
     @staticmethod
     def evaluate(current_text: str) -> str:
         """
-        Evaluates the current expression string and returns the formatted result string or 'Error'.
+        Calling Rust. 
+        I assume it returns a string. If it panics, does the whole GUI crash?
+        Let's find out.
         """
-        """
-        Evaluates the current expression string using the Rust backend.
-        Returns the formatted result string or 'Error'.
-        """
-        return neocalc_backend.evaluate(current_text)
+        return CalculatorLogic._calc.evaluate(current_text)
 
     @staticmethod
     async def evaluate_async(current_text: str) -> str:
         """
-        Asynchronously evaluates the expression using the Rust backend.
+        Async evaluation. 
+        I don't know how Tokio works, but await makes it look easy.
         """
-        return await neocalc_backend.evaluate_async(current_text)
+        return await CalculatorLogic._calc.evaluate_async(current_text)
+    
+    @staticmethod
+    def get_history() -> list:
+        """
+        Asking Rust for the history. 
+        """
+        return CalculatorLogic._calc.get_history()
+    
+    @staticmethod
+    def clear_history() -> None:
+        """
+        Telling Rust to forget everything. 
+        I wish I could forget how Move Semantics work.
+        """
+        CalculatorLogic._calc.clear_history()
+
