@@ -27,11 +27,16 @@ async fn main() -> PyResult<()> {
         let exe_dir = exe_path.parent().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>("Failed to get exe directory"))?;
         let gui_dir = exe_dir.join("python_gui");
         
-        path.insert(0, gui_dir)?;
+        path.insert(0, gui_dir.clone())?;
 
         // 4. Import the application module.
-        // If this works, it's a miracle.
-        let app_module = py.import("app")?;
+        // We catch the error to add the computed path to the message for debugging.
+        let app_module = py.import("app").map_err(|e| {
+            PyErr::new::<pyo3::exceptions::PyImportError, _>(
+                format!("Failed to import 'app'. \nComputed Path: {:?} \nsys.path: {:?} \nOriginal Error: {}", 
+                    gui_dir, path, e)
+            )
+        })?;
         
         // 5. Run the main function.
         // call_method0? Zero arguments? What if I want arguments?
