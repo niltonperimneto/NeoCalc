@@ -22,9 +22,10 @@ async fn main() -> PyResult<()> {
         let path: Bound<PyList> = sys.getattr("path")?.extract()?;
 
         // 3. Add 'python_gui' directory to sys.path.
-        // I really hope env::current_dir() returns what I think it returns.
-        let current_dir = env::current_dir()?;
-        let gui_dir = current_dir.join("python_gui");
+        // We use current_exe() because current_dir() is unreliable (depends on shell).
+        let exe_path = env::current_exe()?;
+        let exe_dir = exe_path.parent().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>("Failed to get exe directory"))?;
+        let gui_dir = exe_dir.join("python_gui");
         
         path.insert(0, gui_dir)?;
 
