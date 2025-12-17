@@ -108,10 +108,20 @@ jobs:
           mkdir -p dist/NeoCalc
           cp target/release/rust_frontend.exe dist/NeoCalc/NeoCalc.exe
           cp -r python_gui dist/NeoCalc/
-          # Copy DLLs (Simplified approach, typically needs ldd/ntldd)
-          # For a quick CI artifact, just the exe + python might fail without DLLs, 
-          # but properly bundling DLLs is complex. 
-          # We will just verify the build for now.
+          cp /mingw64/bin/libpython3*.dll dist/NeoCalc/
+          cp /mingw64/bin/libgtk-4-1.dll dist/NeoCalc/
+          cp /mingw64/bin/libadwaita-1-0.dll dist/NeoCalc/
+          cp /mingw64/bin/libgio-2.0-0.dll dist/NeoCalc/
+          cp /mingw64/bin/libgobject-2.0-0.dll dist/NeoCalc/
+          cp /mingw64/bin/libglib-2.0-0.dll dist/NeoCalc/
+          cp /mingw64/bin/libgirepository-1.0-1.dll dist/NeoCalc/
+          cp /mingw64/bin/libcairo-2.dll dist/NeoCalc/
+          cp /mingw64/bin/libpango-1.0-0.dll dist/NeoCalc/
+          cp /mingw64/bin/libpangocairo-1.0-0.dll dist/NeoCalc/
+          cp /mingw64/bin/libffi-8.dll dist/NeoCalc/
+          cp /mingw64/bin/libintl-8.dll dist/NeoCalc/
+          mkdir -p dist/NeoCalc/lib
+          cp -r /mingw64/lib/python3.* dist/NeoCalc/lib/
           
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -123,6 +133,8 @@ jobs:
     needs: [build-linux, build-flatpak, build-windows]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       
@@ -150,7 +162,7 @@ jobs:
           fi
       
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: release-assets/*
           draft: false
