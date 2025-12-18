@@ -9,14 +9,36 @@ from .grid_standard import ButtonGrid
 from .backend import CalculatorLogic
 
 
+class MockEntry:
+    def __init__(self, parent):
+        self.parent = parent
+        self._callbacks = []
+    
+    def connect(self, signal, callback):
+        if signal == "changed":
+            self._callbacks.append(callback)
+    
+    def get_text(self):
+        return self.parent.expression_state
+        
+    def emit_changed(self):
+        for cb in self._callbacks:
+            # Rust lambda expects (entry)
+            cb(self)
+
+    def set_text(self, text):
+        self.parent.set_expression(text)
+
 class CalculatorWidget(Gtk.Box):
     def __init__(self, **kwargs):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=0, **kwargs)
         
         self.parent_window = None  # Will be set by window when adding instance
         self.logic = CalculatorLogic() # Instance-specific logic
-        self.logic = CalculatorLogic() # Instance-specific logic/backend
         self.expression_state = "0"
+        
+        # Mock Entry for Rust backend compatibility
+        self.entry = MockEntry(self)
 
         # Key Controller for input handling
         key_controller = Gtk.EventControllerKey()
@@ -124,8 +146,10 @@ class CalculatorWidget(Gtk.Box):
     def set_expression(self, text):
         self.expression_state = text
         self.display_label.set_text(text)
+        self.entry.emit_changed()
         if self.on_expression_changed:
             self.on_expression_changed(text)
+
 
     # --- input handling ---
     def on_key_pressed(self, controller, keyval, keycode, state):

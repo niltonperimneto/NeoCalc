@@ -25,7 +25,7 @@ class Calculator(Adw.ApplicationWindow):
         self.setup_layout()
         
         # --- Managers (Rust Powered) ---
-        self.display_manager = DisplayManager(self._display_placeholder)
+        self.display_manager = DisplayManager(self.display_stack)
         self.calc_manager = CalculatorManager(self, self.tab_view, self.sidebar_view, self.display_manager)
         
         # Connect signals for Rust manager (it delegates back to its own methods)
@@ -87,21 +87,7 @@ class Calculator(Adw.ApplicationWindow):
         nav_page = Adw.NavigationPage(child=content_box, title="Calculator")
         self.split_view.set_content(nav_page)
 
-    def on_toggle_sidebar(self, button):
-        current_state = self.split_view.get_show_sidebar()
-        new_state = not current_state
-        
-        if new_state:
-            # Force window to expand by setting minimum size
-            self.set_size_request(600, 500)
-            GLib.timeout_add(150, self._show_sidebar_after_resize)
-        else:
-            self.split_view.set_show_sidebar(False)
-            GLib.timeout_add(100, lambda: self.set_default_size(320, 500) or False)
 
-    def _show_sidebar_after_resize(self):
-        self.split_view.set_show_sidebar(True)
-        self.set_size_request(320, 400)
     # switch_display_for is REMOVED
     pass
 
@@ -111,13 +97,14 @@ class Calculator(Adw.ApplicationWindow):
         pass
 
     def on_toggle_sidebar(self, button):
+        # We need to collapse split view if we are effectively toggling it off?
+        # Actually split view handles it via set_show_sidebar or set_collapsed.
+        # But OverlaySplitView: set_show_sidebar controls visibility when not collapsed.
+        # If collapsed, it's automatic? No.
+        
         current_state = self.split_view.get_show_sidebar()
-        new_state = not current_state
-        self.split_view.set_show_sidebar(new_state)
+        self.split_view.set_show_sidebar(not current_state)
 
-    def _show_sidebar_after_resize(self):
-        # Deprecated logic removed
-        return False
         
     # --- Delegation to Managers (for compatibility/signaling) ---
     def add_calculator_instance(self):
@@ -133,36 +120,7 @@ class Calculator(Adw.ApplicationWindow):
         self.display_manager.switch_display_for(calc_widget)
 
     # --- Actions delegated from ActionRegistry ---
-        preview_label = Gtk.Label(label="0")
-        preview_label.set_xalign(1)
-        preview_label.add_css_class("calc-preview")
-        preview_label.set_wrap(True)
-        preview_label.set_max_width_chars(20)
-        row_box.append(preview_label)
-        
-        row.set_child(row_box)
-        
-        # Store references
-        row.calc_widget = calc_widget
-        row.calc_name = name
-        row.calc_number = self.instance_count
-        row.preview_label = preview_label
-        row.title_label = title_label
-        
-        self.sidebar_view.add_row(row)
-        self.calculator_widgets.append(calc_widget)
-        
-        self.sidebar_view.select_row(row)
-        
-        # Add display to stack
-        self.display_stack.add_named(calc_widget.get_display_widget(), name)
-        
-        # If this is the selected page, show it
-        if self.tab_view.get_selected_page() == page:
-            self.display_stack.set_visible_child_name(name)
-            calc_widget.grab_focus()
-        
-        calc_widget.on_expression_changed = lambda text: preview_label.set_text(text or "0")
+
 
     def update_calculator_name(self, calc_widget):
         from ..backend import CalculatorLogic

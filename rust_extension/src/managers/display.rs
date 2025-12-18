@@ -21,31 +21,31 @@ impl DisplayManager {
         // Get display widget: display = calc_widget.get_display_widget()
         let display = calc_widget.call_method0(py, "get_display_widget")?;
 
-        // Check if already child: current = self.placeholder.get_first_child()
-        let current_child = self.placeholder.call_method0(py, "get_first_child")?;
-
-        if current_child.is(&display) {
-            // calc_widget.update_history_display()
-            calc_widget.call_method0(py, "update_history_display")?;
-            return Ok(());
-        }
-
-        // Remove existing children
-        let mut child = self.placeholder.call_method0(py, "get_first_child")?;
-        while !child.is_none(py) {
-            let next_child = child.call_method0(py, "get_next_sibling")?;
-            self.placeholder.call_method1(py, "remove", (&child,))?;
-            child = next_child;
-        }
-
-        // Unparent if needed
+        // Check if display is already a child of placeholder
         let parent = display.call_method0(py, "get_parent")?;
-        if !parent.is_none(py) && !parent.is(&self.placeholder) {
-            parent.call_method1(py, "remove", (&display,))?;
+        
+        let needs_add = if parent.is_none(py) {
+            true
+        } else {
+            !parent.is(&self.placeholder)
+        };
+
+        if needs_add {
+             if !parent.is_none(py) {
+                 parent.call_method1(py, "remove", (&display,))?;
+             }
+             
+             // Try to get name from calc_widget
+             if calc_widget.bind(py).hasattr("calc_name")? {
+                 let name: String = calc_widget.getattr(py, "calc_name")?.extract(py)?;
+                 self.placeholder.call_method1(py, "add_named", (&display, &name))?;
+             } else {
+                 self.placeholder.call_method1(py, "add_child", (&display,))?;
+             }
         }
 
-        // Append
-        self.placeholder.call_method1(py, "append", (&display,))?;
+        // For Gtk.Stack, we just switch the visible child
+        self.placeholder.call_method1(py, "set_visible_child", (&display,))?;
 
         Ok(())
     }

@@ -83,7 +83,7 @@ impl CalculatorManager {
         let title = format!("Calculator {}", new_count);
         let name = format!("calc_{}", new_count);
 
-        let view_mod = py.import("python_gui.calculator.view")?;
+        let view_mod = py.import("calculator.view")?;
         let calc_widget_class = view_mod.getattr("CalculatorWidget")?;
         
         let locals = PyDict::new(py);
@@ -104,6 +104,9 @@ impl CalculatorManager {
         page.setattr("calc_name", &name)?;
         page.setattr("calc_widget", &calc_widget)?;
         page.setattr("calc_number", new_count)?;
+        
+        // Also attach name to the widget itself for DisplayManager
+        calc_widget.setattr(py, "calc_name", &name)?;
 
         self.tab_view.bind(py).call_method1("set_selected_page", (&page,))?;
 
