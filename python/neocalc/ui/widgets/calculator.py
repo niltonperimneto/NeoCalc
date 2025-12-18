@@ -62,7 +62,8 @@ class CalculatorWidget(Gtk.Box):
 
         grid_box.append(self.view_stack)
         
-        grid_box.append(self.view_stack)
+        
+
         
         # Append Content only (Display is handled by DisplayManager/Window)
         self.append(main_content)
