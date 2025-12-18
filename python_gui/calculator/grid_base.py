@@ -37,18 +37,13 @@ class CalculatorGrid(Gtk.Grid):
 
     def on_button_clicked(self, button):
         """Handle standard digit and operator clicks."""
-        if self.calculator.logic:
-             self.calculator.logic.input(button.get_label())
-             self.calculator.update_display()
-        else:
-             # Fallback (shouldn't happen)
-             pass
+        self.calculator.insert_at_cursor(button.get_label())
 
     def on_equal_clicked(self, button):
         """Handle evaluation."""
         if self.calculator.logic:
              self.calculator.logic.evaluate()
-             self.calculator.update_display()
+             self.calculator.update_display() # This will show result and reset cursor
         
         # Update history display
         if hasattr(self.calculator, 'update_history_display'):
@@ -66,6 +61,4 @@ class CalculatorGrid(Gtk.Grid):
 
     def on_func_clicked(self, button):
         """Handle scientific function clicks."""
-        if self.calculator.logic:
-             self.calculator.logic.input(button.get_label())
-             self.calculator.update_display()
+        self.calculator.insert_at_cursor(button.get_label())
