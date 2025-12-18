@@ -15,7 +15,6 @@ class CalculatorWidget(Gtk.Box):
         
         self.parent_window = None  # Will be set by window when adding instance
         self.logic = CalculatorLogic() # Instance-specific logic
-        self.logic = CalculatorLogic() # Instance-specific logic
         
         # Initial display sync
         GLib.idle_add(self.update_display)

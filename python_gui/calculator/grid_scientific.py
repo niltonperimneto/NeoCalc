@@ -66,18 +66,5 @@ class ScientificGrid(CalculatorGrid):
             (".", self.on_button_clicked, 6, 4, 1, 1),
         ]
 
-        for label, callback, col, row, width, height in buttons_info:
-            button = Gtk.Button(label=label)
-            button.connect("clicked", callback)
-            button.add_css_class("calc-grid-button")
-            if label == "=":
-                button.add_css_class("suggested-action")
-            elif label == "C":
-                button.add_css_class("destructive-action")
-            
-            # Layout optimization: Scientific side might need styling distinction?
-            # For now, just homogeneous grid.
-            button.set_hexpand(True)
-            button.set_vexpand(True)
-            self.attach(button, col, row, width, height)
+        self.create_buttons(buttons_info)
 

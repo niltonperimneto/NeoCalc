@@ -10,6 +10,31 @@ class CalculatorGrid(Gtk.Grid):
         super().__init__(row_spacing=3, column_spacing=3, **kwargs)
         self.calculator = calculator_window
 
+    def create_buttons(self, buttons_info):
+        """Creates buttons from a list of tuples and attaches them to the grid."""
+        for label, callback, col, row, width, height in buttons_info:
+            button = Gtk.Button(label=label)
+            button.connect("clicked", callback)
+            button.add_css_class("calc-grid-button")
+            
+            if label == "=":
+                button.add_css_class("suggested-action")
+            elif label == "C":
+                button.add_css_class("destructive-action")
+            
+            # Special layout handling for operators in standard grid (Col 3)
+            # This is a bit specific but safe to generalize or keep flexible
+            if col == 3 and not self.get_column_homogeneous(): 
+                 # Only if we are not homogeneous (Standard Grid)
+                 # Check if this column is meant to be thin
+                 button.set_hexpand(False)
+                 button.set_size_request(70, -1)
+            else:
+                 button.set_hexpand(True)
+
+            button.set_vexpand(True)
+            self.attach(button, col, row, width, height)
+
     def on_button_clicked(self, button):
         """Handle standard digit and operator clicks."""
         if self.calculator.logic:

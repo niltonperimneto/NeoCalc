@@ -194,3 +194,78 @@ fn infix_binding_power(op: &Token) -> Option<(u8, u8)> {
         _ => None,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use num_complex::Complex64;
+
+    fn eval(s: &str) -> Complex64 {
+        evaluate(s).expect(&format!("Failed to parse: {}", s))
+    }
+
+    fn assert_close(a: Complex64, b: Complex64) {
+        let diff = (a - b).norm();
+        assert!(diff < 1e-10, "Expected {}, got {}, diff {}", b, a, diff);
+    }
+
+    #[test]
+    fn test_basic_arithmetic() {
+        assert_close(eval("1 + 2"), Complex64::new(3.0, 0.0));
+        assert_close(eval("10 - 4"), Complex64::new(6.0, 0.0));
+        assert_close(eval("3 * 5"), Complex64::new(15.0, 0.0));
+        assert_close(eval("12 / 4"), Complex64::new(3.0, 0.0));
+    }
+
+    #[test]
+    fn test_precedence() {
+        assert_close(eval("1 + 2 * 3"), Complex64::new(7.0, 0.0));
+        assert_close(eval("(1 + 2) * 3"), Complex64::new(9.0, 0.0));
+        assert_close(eval("10 - 2 + 3"), Complex64::new(11.0, 0.0)); // Left associative + -
+    }
+
+    #[test]
+    fn test_power_associativity() {
+        // 2^3^2 = 2^(3^2) = 2^9 = 512
+        // (2^3)^2 = 8^2 = 64
+        assert_close(eval("2^3^2"), Complex64::new(512.0, 0.0));
+    }
+
+    #[test]
+    fn test_unary_minus() {
+        assert_close(eval("-5"), Complex64::new(-5.0, 0.0));
+        assert_close(eval("5 + - 3"), Complex64::new(2.0, 0.0));
+    }
+
+    #[test]
+    fn test_unary_vs_power() {
+        // -2^2 should be -4
+        assert_close(eval("-2^2"), Complex64::new(-4.0, 0.0));
+        // (-2)^2 should be 4
+        assert_close(eval("(-2)^2"), Complex64::new(4.0, 0.0));
+    }
+
+    #[test]
+    fn test_functions() {
+        assert_close(eval("sqrt(4)"), Complex64::new(2.0, 0.0));
+        assert_close(eval("abs(-5)"), Complex64::new(5.0, 0.0));
+        // sin(0) = 0
+        assert_close(eval("sin(0)"), Complex64::new(0.0, 0.0));
+    }
+    
+    #[test]
+    fn test_complex() {
+        // i * i = -1
+        assert_close(eval("i * i"), Complex64::new(-1.0, 0.0));
+    }
+
+    #[test]
+    fn test_sqrt_negative() {
+        let neg_one = eval("-1");
+        assert_close(neg_one, Complex64::new(-1.0, 0.0));
+        
+        // Ensure principal root (i) is returned for sqrt(-1)
+        let root = eval("sqrt(-1)");
+        assert_close(root, Complex64::new(0.0, 1.0));
+    }
+}

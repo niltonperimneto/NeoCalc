@@ -39,25 +39,5 @@ class ButtonGrid(CalculatorGrid):
             (".", self.on_button_clicked, 2, 4, 1, 1),
         ]
 
-        for label, callback, col, row, width, height in buttons_info:
-            button = Gtk.Button(label=label)
-            button.connect("clicked", callback)
-            button.add_css_class("calc-grid-button")
-            
-            if label == "=":
-                button.add_css_class("suggested-action")
-            elif label == "C":
-                button.add_css_class("destructive-action")
-            
-            # Layout Sizing:
-            # Columns 0, 1, 2 (Numbers) -> Expand to fill space (Wide)
-            # Column 3 (Operators -, +, =) -> Don't expand, fixed width (Thin)
-            if col == 3:
-                button.set_hexpand(False)
-                button.set_size_request(70, -1) # Fixed width for operators (approx scientific width)
-            else:
-                button.set_hexpand(True)
-            
-            button.set_vexpand(True)
-            self.attach(button, col, row, width, height)
+        self.create_buttons(buttons_info)
 

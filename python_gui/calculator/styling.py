@@ -47,7 +47,6 @@ class StyleManager:
                     Gtk.STYLE_PROVIDER_PRIORITY_USER
                 )
                 StyleManager._base_provider = provider
-                print(f"Loaded Base CSS from {base_path}")
             except Exception as e:
                 print(f"Failed to load Base CSS: {e}")
 
@@ -74,7 +73,6 @@ class StyleManager:
                     Gtk.STYLE_PROVIDER_PRIORITY_USER + 1
                 )
                 StyleManager._theme_provider = provider
-                print(f"Loaded Theme CSS from {css_path}")
             except Exception as e:
                 print(f"Failed to load Theme CSS: {e}")
 
@@ -115,7 +113,6 @@ class StyleManager:
                     
                 import shutil
                 shutil.copy(filepath, os.path.join(dest_dir, filename))
-                print(f"Imported theme: {filename}")
                 
                 # Reload themes in UI? (This part needs action feedback, likely reloading the menu or app state)
             dialog.destroy()
