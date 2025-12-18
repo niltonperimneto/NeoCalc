@@ -1,0 +1,33 @@
+// Constants for Python attributes and method names
+
+pub const ATTR_CALC_WIDGET: &str = "calc_widget";
+pub const ATTR_CALC_NAME: &str = "calc_name";
+pub const ATTR_CALC_NUMBER: &str = "calc_number";
+pub const ATTR_LOGIC: &str = "logic";
+pub const ATTR_HISTORY_LABEL: &str = "history_label";
+pub const ATTR_PREVIEW_LABEL: &str = "preview_label";
+pub const ATTR_TITLE_LABEL: &str = "title_label";
+pub const ATTR_SIDEBAR_LIST: &str = "sidebar_list";
+pub const ATTR_PARENT_WINDOW: &str = "parent_window";
+
+pub const METHOD_GET_N_PAGES: &str = "get_n_pages";
+pub const METHOD_GET_NTH_PAGE: &str = "get_nth_page";
+pub const METHOD_ADD_PAGE: &str = "add_page";
+pub const METHOD_CLOSE_PAGE: &str = "close_page";
+pub const METHOD_SET_TITLE: &str = "set_title";
+pub const METHOD_SET_INDICATOR: &str = "set_indicator_icon";
+pub const METHOD_SET_SELECTED_PAGE: &str = "set_selected_page";
+pub const METHOD_GET_SELECTED_PAGE: &str = "get_selected_page";
+pub const METHOD_GET_HISTORY: &str = "get_history";
+pub const METHOD_GRAB_FOCUS: &str = "grab_focus";
+pub const METHOD_SWITCH_DISPLAY: &str = "switch_display_for";
+pub const METHOD_ADD_ROW: &str = "add_row";
+pub const METHOD_SELECT_ROW: &str = "select_row";
+pub const METHOD_REMOVE: &str = "remove";
+pub const METHOD_CONNECT: &str = "connect";
+pub const METHOD_GET_ROW_AT_INDEX: &str = "get_row_at_index";
+pub const METHOD_SET_LABEL: &str = "set_label";
+
+pub const EVENT_NOTIFY_SELECTED_PAGE: &str = "notify::selected-page";
+pub const EVENT_CLOSE_PAGE: &str = "close-page";
+pub const EVENT_PAGE_DETACHED: &str = "page-detached";
