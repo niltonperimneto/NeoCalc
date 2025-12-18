@@ -181,6 +181,17 @@ impl CalculatorManager {
              let calc_widget = page.getattr(py, ATTR_CALC_WIDGET)?;
              self.display_manager.call_method1(py, METHOD_SWITCH_DISPLAY, (&calc_widget,))?;
              calc_widget.call_method0(py, METHOD_GRAB_FOCUS)?;
+             
+             // Sync Sidebar Selection
+             if let Some(row) = helpers::find_sidebar_row_by_widget(py, &self.sidebar_view, &calc_widget)? {
+                 let sidebar_list = self.sidebar_view.getattr(py, ATTR_SIDEBAR_LIST)?;
+                 let selected_row = sidebar_list.call_method0(py, "get_selected_row")?;
+                 
+                 // Only select if not already selected to avoid loops/redundancy
+                 if selected_row.is_none(py) || !selected_row.is(&row) {
+                     sidebar_list.call_method1(py, METHOD_SELECT_ROW, (&row,))?;
+                 }
+             }
         }
         Ok(())
     }
