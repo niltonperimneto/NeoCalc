@@ -13,16 +13,13 @@ def present_about_dialog(parent):
     dialog.set_comments(_("The calculator that judges you.\n(Forked & Broken for educational purposes)"))
     dialog.set_website("https://github.com/niltonperimneto/NeoCalc")
     dialog.set_issue_url("https://github.com/niltonperimneto/NeoCalc/issues")
-    
-    # Identity
-    dialog.set_application_icon("model-source") 
-    
-    # Credits
+
+    dialog.set_application_icon("model-source")
+
     dialog.add_credit_section(_("Original Code"), ["Nilton Perim Neto"])
     dialog.add_credit_section(_("New Code (Rust)"), ["Nilton Perim Neto"])
     dialog.add_credit_section(_("Purpose"), [_("To teach innocent kids Python"), _("To try to teach me Rust")])
-    
-    # Copyright
+
     dialog.set_copyright("© 2025 Nilton Perim Neto")
-    
+
     dialog.present()

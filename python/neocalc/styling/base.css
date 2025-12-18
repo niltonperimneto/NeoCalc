@@ -5,7 +5,7 @@
     border-radius: 6px;
     padding: 0;
     margin: 0;
-    /* Fluid buttons that adapt to window size */
+
 }
 
 .calc-operator-button {
@@ -14,7 +14,7 @@
     font-size: 1.1em;
     border-radius: 6px;
     padding: 0;
-    /* Narrower buttons for tall operators to match scientific grid */
+
 }
 
 .header-btn {
@@ -37,15 +37,14 @@
 
 .calculator-header-extension {
     background: @headerbar_bg_color;
-    /* No border or shadow for seamless look */
+
     padding-top: 8px;
     padding-bottom: 8px;
 }
 
-/* Sidebar and main view use header color for seamless look */
 .sidebar {
     background-color: @headerbar_bg_color;
-    /* No border for seamless look */
+
 }
 
 .sidebar-row {
@@ -54,12 +53,11 @@
 
 .calculator-display-header {
     background-color: @headerbar_bg_color;
-    /* No border for seamless look */
+
     padding: 6px 12px;
     min-height: 64px;
 }
 
-/* Overlay dim when drawer is shown */
 .overlay {
     background-color: rgba(0, 0, 0, 0.22);
 }
@@ -117,7 +115,6 @@
     font-weight: bold;
 }
 
-/* Sidebar list styling */
 .sidebar-list {
     background-color: transparent;
 }
@@ -132,7 +129,6 @@
     background-color: @accent_bg_color;
 }
 
-/* Calculator preview in sidebar */
 .calc-preview {
     font-family: "Adwaita Sans";
     font-size: 16px;

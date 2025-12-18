@@ -12,6 +12,7 @@ class StyleManager:
     _base_provider = None
     _theme_provider = None
 
+    ## Return the full path to the directory containing theme CSS files
     @staticmethod
     def _get_themes_dir():
         """Returns accessibility path to themes directory."""
@@ -24,16 +25,17 @@ class StyleManager:
         themes_dir = StyleManager._get_themes_dir()
         if not os.path.exists(themes_dir):
             return []
-        
+
+        ## List all .css files in the themes directory and remove extension
         themes = []
         try:
             for f in os.listdir(themes_dir):
                 if f.endswith(".css"):
-                    themes.append(f[:-4])  # Remove .css extension
+                    themes.append(f[:-4])
         except OSError as e:
             logger.error(f"Failed to list themes: {e}")
             return []
-            
+
         return sorted(themes)
 
     @staticmethod
@@ -41,7 +43,9 @@ class StyleManager:
         """Helper to create, load, and attach a CSS provider."""
         provider = Gtk.CssProvider()
         try:
+            ## Load CSS file data into a new provider
             provider.load_from_path(path)
+            ## Attach the provider to the display with specified priority
             Gtk.StyleContext.add_provider_for_display(
                 display,
                 provider,
@@ -61,7 +65,7 @@ class StyleManager:
         display = Gdk.Display.get_default()
         base_dir = os.path.dirname(os.path.abspath(__file__))
 
-        # 1. Clear existing providers
+        ## Clear any previously loaded custom theme provider
         if StyleManager._theme_provider:
             Gtk.StyleContext.remove_provider_for_display(
                 display,
@@ -76,15 +80,15 @@ class StyleManager:
              )
              StyleManager._base_provider = None
 
-        # 2. Load Base Provider (Priority USER)
+        ## Load the base styles (always required)
         base_path = os.path.join(base_dir, "base.css")
         StyleManager._base_provider = StyleManager._load_css_provider(
-            display, 
-            base_path, 
+            display,
+            base_path,
             Gtk.STYLE_PROVIDER_PRIORITY_USER
         )
 
-        # 3. Load Theme Provider (Priority USER + 1)
+        ## If a theme is selected, load it on top with higher priority
         if theme_name and theme_name != 'default':
             theme_path = os.path.join(base_dir, "themes", f"{theme_name}.css")
             StyleManager._theme_provider = StyleManager._load_css_provider(
@@ -98,39 +102,35 @@ class StyleManager:
         """Toggle between light and dark application theme."""
         style_manager = Adw.StyleManager.get_default()
         is_dark = style_manager.get_dark()
+        ## Force the opposite color scheme
         style_manager.set_color_scheme(
             Adw.ColorScheme.FORCE_LIGHT if is_dark else Adw.ColorScheme.FORCE_DARK
         )
-        return not is_dark  # Return new state (True if dark)
+        return not is_dark
 
     @staticmethod
     def import_theme(parent_window):
         """Opens a file chooser dialog to import a CSS theme."""
+        ## Create a native file picker dialog
         dialog = Gtk.FileChooserNative(
-            title=_("Import Theme"), # Utilizing gettext if available or assuming convention
+            title=_("Import Theme"),
             transient_for=parent_window,
             action=Gtk.FileChooserAction.OPEN
         )
-        # Fallback for gettext if not injected in this module
-        # But 'actions.py' usually sets _ builtin.
-        # To be safe, we'll avoid _() here unless we know it's available.
-        # But wait, original code used literals?
-        # Original code used `title="Import Theme"`.
-        # I'll stick to literals to avoid NameError if `_` isn't built-in.
+
         dialog.set_title("Import Theme")
-        
+
         filter_css = Gtk.FileFilter()
         filter_css.set_name("CSS Files")
         filter_css.add_pattern("*.css")
         dialog.add_filter(filter_css)
-        
+
         def on_response(dialog, response):
             if response == Gtk.ResponseType.ACCEPT:
                 file = dialog.get_file()
                 filepath = file.get_path()
                 filename = os.path.basename(filepath)
-                
-                # Copy file to themes directory
+
                 dest_dir = StyleManager._get_themes_dir()
                 if not os.path.exists(dest_dir):
                     try:
@@ -144,9 +144,8 @@ class StyleManager:
                     logger.info(f"Imported theme: {filename}")
                 except Exception as e:
                      logger.error(f"Failed to copy theme file: {e}")
-                
-                # Ideally trigger a UI refresh, but user selects manually
+
             dialog.destroy()
-            
+
         dialog.connect("response", on_response)
         dialog.show()

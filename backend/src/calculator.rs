@@ -10,7 +10,9 @@ use crate::utils::{self, lock_mutex};
 #[pyclass]
 #[derive(Default)]
 pub struct Calculator {
+    /* Stores the history of calculations as a list of strings */
     history: Arc<Mutex<Vec<String>>>,
+    /* Stores the current input value being typed or displayed */
     input_buffer: Arc<Mutex<String>>,
 }
 
@@ -18,6 +20,7 @@ pub struct Calculator {
 impl Calculator {
     #[new]
     fn new() -> Self {
+        /* Initialize a new Calculator with empty history and "0" as input */
         Calculator {
             history: Arc::new(Mutex::new(Vec::new())),
             input_buffer: Arc::new(Mutex::new(String::from("0"))),
@@ -25,25 +28,32 @@ impl Calculator {
     }
 
     fn input(&self, text: String) -> PyResult<String> {
+        /* Lock the buffer to safely modify it across threads */
         let mut buffer = lock_mutex(&self.input_buffer)?;
-        
+
+        /* If buffer is "0", replace it unless user enters decimal or paren */
         if *buffer == "0" && text != "." && text != ")" {
             *buffer = text;
         } else {
+             /* Map special tokens like X to * and append */
              let mapped = utils::map_input_token(&text);
              buffer.push_str(mapped);
-             
+
+             /* If a function like sin( is added, ensure opening paren */
              if utils::should_auto_paren(mapped) {
                  buffer.push('(');
              }
         }
+        /* Return the updated buffer */
         Ok(buffer.clone())
     }
 
     fn backspace(&self) -> PyResult<String> {
         let mut buffer = lock_mutex(&self.input_buffer)?;
+        /* Remove the last character if buffer is not empty */
         if !buffer.is_empty() {
             buffer.pop();
+            /* If buffer becomes empty, reset to "0" */
             if buffer.is_empty() {
                 *buffer = "0".to_string();
             }
@@ -52,6 +62,7 @@ impl Calculator {
     }
 
     fn clear(&self) -> PyResult<String> {
+        /* Reset the entire buffer to "0" */
         let mut buffer = lock_mutex(&self.input_buffer)?;
         *buffer = "0".to_string();
         Ok(buffer.clone())
@@ -62,18 +73,21 @@ impl Calculator {
     }
 
     fn evaluate(&self, _expression: Option<String>) -> PyResult<String> {
+        /* Determine whether to evaluate provided expression or current buffer */
         let expr_to_eval = if let Some(e) = _expression {
             e
         } else {
             lock_mutex(&self.input_buffer)?.clone()
         };
 
+        /* Call the core engine to calculate result */
         let res = engine::evaluate(&expr_to_eval);
         let output = match res {
             Ok(c) => utils::format_complex(c),
             Err(_) => "Error".to_string(),
         };
 
+        /* If valid result, save to history and update buffer */
         if output != "Error" && !expr_to_eval.trim().is_empty() {
             if let Ok(mut h) = self.history.lock() {
                 h.push(format!("{} = {}", expr_to_eval, output));
@@ -97,13 +111,13 @@ impl Calculator {
         } else {
             lock_mutex(&self.input_buffer)?.clone()
         };
-        
+
         let history = self.history.clone();
         let buffer_arc = self.input_buffer.clone();
-        
-        // Clone for the blocking task
+
         let expr_for_task = buffer_val.clone();
 
+        /* Run evaluation in a separate blocking thread to keep UI responsive */
         future_into_py(py, async move {
             let output = tokio::task::spawn_blocking(move || {
                 let res = engine::evaluate(&expr_for_task);
@@ -113,9 +127,9 @@ impl Calculator {
                 }
             }).await.map_err(|e| PyRuntimeError::new_err(format!("Join error: {}", e)))?;
 
+            /* Update state if successful */
             if output != "Error" && !buffer_val.trim().is_empty() {
-                // We use explicit matches or unwrap_or_else here to avoid extensive error handling inside async block
-                // keeping it simple as these locks shouldn't be poisoned easily in this content
+
                 if let Ok(mut h) = history.lock() {
                      h.push(format!("{} = {}", buffer_val, output));
                 }
@@ -130,7 +144,7 @@ impl Calculator {
     fn get_history(&self) -> PyResult<Vec<String>> {
         Ok(lock_mutex(&self.history)?.clone())
     }
-    
+
     fn clear_history(&self) -> PyResult<()> {
         let mut h = lock_mutex(&self.history)?;
         h.clear();

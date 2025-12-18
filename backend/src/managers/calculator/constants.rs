@@ -1,5 +1,3 @@
-// Constants for Python attributes and method names
-
 pub const ATTR_CALC_WIDGET: &str = "calc_widget";
 pub const ATTR_CALC_NAME: &str = "calc_name";
 pub const ATTR_CALC_NUMBER: &str = "calc_number";

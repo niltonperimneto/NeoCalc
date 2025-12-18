@@ -5,42 +5,35 @@ use std::path::PathBuf;
 use neocalc_backend::neocalc_backend;
 use gettextrs::*;
 
-// Using 'current_thread' because GTK demands the main thread like a diva.
-// Also, making this async because someone on Reddit said it's "Mockern".
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> PyResult<()> {
-    // 0. Initialize Serialization (Standard Gettext)
+
+    /* Initialize localization support (gettext) */
     setlocale(LocaleCategory::LcAll, "");
     bindtextdomain("neocalc", "locale").expect("Failed to bind text domain");
     textdomain("neocalc").expect("Failed to set text domain");
 
-    // 1. Inject the Rust backend module into Python.
-    // I read in the docs that this is how you do it. 
-    // It feels dirty, like global variables.
+    /* Build a new Python module from the request Rust functions */
     pyo3::append_to_inittab!(neocalc_backend);
 
-    // 2. Initialize Python. 
-    // The compiler yelled at me about 'with_gil', so now we 'attach'. 
-    // It sounds clingy, but I don't make the rules.
-    // We are blocking the async runtime here. Don't tell Tokio.
+    /* Initialize the embedded Python interpreter */
     Python::attach(|py| {
         let sys = py.import("sys")?;
-        // getattr("path")?.extract()?; -> The '?' operator is carrying this entire codebase.
+
         let sys_path: Bound<PyList> = sys.getattr("path")?.extract()?;
 
-        // 3. Find the 'python' directory. 
-        // We are going on a treasure hunt.
+        /* Try to locate the 'python' folder containing the app source code */
         let mut found_path: Option<PathBuf> = None;
-        
-        // Strategy A: Look relative to the executable (wherever we deployed this mess)
+
+        /* Look relative to the current executable first */
         if let Ok(exe_path) = env::current_exe() {
              if let Some(exe_dir) = exe_path.parent() {
                  let candidate = exe_dir.join("python");
                  if candidate.exists() {
                      found_path = Some(candidate);
                  } else {
-                     // Maybe we are in a nested build dir? Up we go!
-                     // Search up to 3 levels up because cargo directories are a maze.
+
+                      /* Fallback: look in parent directories (development environment) */
                      let mut current_search = exe_dir.to_path_buf();
                      for _ in 0..3 {
                         if let Some(parent) = current_search.parent() {
@@ -58,8 +51,7 @@ async fn main() -> PyResult<()> {
              }
         }
 
-        // Strategy B: Look relative to where ever the user clicked run (CWD)
-        // This is the fallback plan if Strategy A fails like my last startup.
+        /* Final check in current working directory */
         if found_path.is_none() {
              if let Ok(cwd) = env::current_dir() {
                  let candidate = cwd.join("python");
@@ -75,19 +67,18 @@ async fn main() -> PyResult<()> {
             )
         })?;
 
-        // Add the 'python' directory to sys.path so we can import 'neocalc' package from it
+        /* Add the found directory to Python path */
         sys_path.insert(0, gui_dir.to_string_lossy())?;
 
-        // 4. Import the application module.
+        /* Import the Python application entry point */
         let app_module = py.import("neocalc.app").map_err(|e| {
              PyErr::new::<pyo3::exceptions::PyImportError, _>(
-                format!("Failed to import 'neocalc.app'. \nPath value: {:?} \nError: {}", 
+                format!("Failed to import 'neocalc.app'. \nPath value: {:?} \nError: {}",
                     gui_dir, e)
             )
         })?;
-        
-        // 5. Run the main function.
-        // There is no turning back now.
+
+        /* Start the application */
         app_module.call_method0("main")?;
 
         Ok(())

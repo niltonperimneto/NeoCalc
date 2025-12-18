@@ -12,28 +12,26 @@ class CalcType(GObject.GObject):
 
 class HeaderView(Adw.Bin):
     """Handles the application header bar, including dropdown and menu."""
-    
+
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
         self.header_bar = Adw.HeaderBar()
         self.set_child(self.header_bar)
         self.setup_ui()
-        
+
     def setup_ui(self):
-        # Toggle Sidebar Button
+
         toggle_btn = Gtk.Button(icon_name="sidebar-show-symbolic")
         toggle_btn.set_tooltip_text(_("Toggle Sidebar"))
         toggle_btn.connect("clicked", self.main_window.on_toggle_sidebar)
         toggle_btn.add_css_class("header-btn")
         self.header_bar.pack_start(toggle_btn)
-        
-        # Calculator Type Dropdown
+
         self.setup_dropdown()
-        
-        # Menu Button
+
         self.setup_menu()
-        
+
     def setup_dropdown(self):
         type_model = Gio.ListStore(item_type=GObject.Object)
         type_model.append(CalcType(_("Standard"), "view-grid-symbolic"))
@@ -49,7 +47,7 @@ class HeaderView(Adw.Bin):
             label.set_xalign(0)
             box.append(label)
             list_item.set_child(box)
-            
+
         def bind_factory(factory, list_item):
             item = list_item.get_item()
             box = list_item.get_child()
@@ -57,7 +55,7 @@ class HeaderView(Adw.Bin):
             label = icon.get_next_sibling()
             icon.set_from_icon_name(item.icon)
             label.set_text(item.label)
-            
+
         factory.connect("setup", setup_factory)
         factory.connect("bind", bind_factory)
 
@@ -68,31 +66,26 @@ class HeaderView(Adw.Bin):
         self.type_dropdown.add_css_class("center-dropdown")
         self.type_dropdown.connect("notify::selected", self.main_window.on_type_dropdown_changed)
         self.header_bar.set_title_widget(self.type_dropdown)
-        
+
     def setup_menu(self):
         menu_model = Gio.Menu()
-        
-        # Themes Submenu
-        # Themes Submenu
+
         themes_menu = Gio.Menu()
-        
-        # Default Theme
+
         themes_menu.append(_("Default"), "win.set_theme('default')")
-        
-        # Dynamic Themes
+
         for theme_name in StyleManager.get_available_themes():
-            # Capitalize first letter for display
+
             display_name = theme_name.replace("_", " ").title()
             themes_menu.append(display_name, f"win.set_theme('{theme_name}')")
-            
+
         themes_menu.append(_("Import Theme..."), "win.import_theme")
-        
+
         menu_model.append_submenu(_("Themes"), themes_menu)
-        
-        # Other items
+
         menu_model.append(_("Keyboard Shortcuts"), "win.show_shortcuts")
         menu_model.append(_("About"), "win.about")
-        
+
         menu_btn = Gtk.MenuButton()
         menu_btn.set_icon_name("open-menu-symbolic")
         menu_btn.set_menu_model(menu_model)

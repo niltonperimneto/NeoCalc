@@ -3,8 +3,7 @@ from gi.repository import Gtk, Adw
 def show_shortcuts_dialog(parent_window):
     """Show a shortcuts window with all keyboard shortcuts"""
     builder = Gtk.Builder()
-    
-    # Build shortcuts window using UI definition
+
     shortcuts_ui = """
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
@@ -60,7 +59,7 @@ def show_shortcuts_dialog(parent_window):
   </object>
 </interface>
 """
-    
+
     builder.set_translation_domain("neocalc")
     builder.add_from_string(shortcuts_ui)
     shortcuts_window = builder.get_object("shortcuts_window")

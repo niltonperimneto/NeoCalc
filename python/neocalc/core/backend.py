@@ -1,5 +1,5 @@
 import neocalc_backend
-# Re-export these for window.py
+
 from neocalc_backend import DisplayManager, CalculatorManager
 
 class CalculatorLogic:
@@ -7,9 +7,9 @@ class CalculatorLogic:
     Python wrapper for the Rust backend.
     Now instance-based so everyone gets their own sandbox.
     """
-    
+
     def __init__(self):
-        # Create a fresh Rust backend instance for this logic controller
+
         self._calc = neocalc_backend.Calculator()
 
     def input(self, text: str) -> str:
@@ -29,7 +29,7 @@ class CalculatorLogic:
         Clear buffer.
         """
         return self._calc.clear()
-        
+
     def get_buffer(self) -> str:
         """
         Get current state.
@@ -44,20 +44,20 @@ class CalculatorLogic:
 
     async def evaluate_async(self, current_text: str = None) -> str:
         """
-        Async evaluation. 
+        Async evaluation.
         I don't know how Tokio works, but await makes it look easy.
         """
         return await self._calc.evaluate_async(current_text)
-    
+
     def get_history(self) -> list:
         """
-        Asking Rust for the history. 
+        Asking Rust for the history.
         """
         return self._calc.get_history()
-    
+
     def clear_history(self) -> None:
         """
-        Telling Rust to forget everything. 
+        Telling Rust to forget everything.
         """
         self._calc.clear_history()
 

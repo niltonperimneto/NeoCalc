@@ -1,5 +1,3 @@
-/* Nord Dark Theme */
-
 @define-color window_bg_color #2e3440;
 @define-color window_fg_color #d8dee9;
 
@@ -24,7 +22,6 @@
 @define-color card_fg_color #d8dee9;
 @define-color card_shade_color rgba(0, 0, 0, 0.2);
 
-/* Calculators Grid */
 .calc-grid-button {
     background-color: #3b4252;
     color: #d8dee9;
@@ -40,19 +37,17 @@
     color: #2e3440;
 }
 
-/* Unique accents */
 .calc-grid-button.accent {
     background-color: #88c0d0;
-    /* Frost Blue */
+
     color: #2e3440;
 }
 
 .calc-grid-button.accent:hover {
     background-color: #81a1c1;
-    /* Darker Blue */
+
 }
 
-/* Display Area */
 .calculator-display-header {
     background-color: #2e3440;
     color: #d8dee9;
@@ -66,7 +61,6 @@
     color: #4c566a;
 }
 
-/* Sidebar */
 .sidebar {
     background-color: #3b4252;
     border-right: 1px solid #4c566a;
@@ -77,7 +71,6 @@
     color: #2e3440;
 }
 
-/* Semantic Overrides */
 .calc-grid-button.suggested-action {
     background-color: @accent_bg_color;
     color: @accent_fg_color;

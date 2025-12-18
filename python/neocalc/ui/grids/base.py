@@ -2,10 +2,9 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk
 
-
 class CalculatorGrid(Gtk.Grid):
     """Base class for calculator grids handling common button actions."""
-    
+
     def __init__(self, calculator_window, **kwargs):
         super().__init__(row_spacing=3, column_spacing=3, **kwargs)
         self.calculator = calculator_window
@@ -14,7 +13,7 @@ class CalculatorGrid(Gtk.Grid):
         """Creates buttons from a list of tuples and attaches them to the grid."""
         for label, callback, col, row, width, height in buttons_info:
             button = Gtk.Button(label=label)
-            button.set_focusable(False) # Prevent focus stealing from display
+            button.set_focusable(False)
             button.connect("clicked", callback)
             self._apply_button_styles(button, label)
             self._apply_button_layout(button, col)
@@ -26,14 +25,14 @@ class CalculatorGrid(Gtk.Grid):
         button.add_css_class("calc-grid-button")
         if label == "=":
             button.add_css_class("suggested-action")
-            button.add_css_class("accent") # Compability with some semantic themes
+            button.add_css_class("accent")
         elif label in ("C", "AC", "Delete", "⌫"):
             button.add_css_class("destructive-action")
             button.add_css_class("destructive")
 
     def _apply_button_layout(self, button, col):
         """Configures button expansion and sizing."""
-        # Uniform fluid layout
+
         button.set_hexpand(True)
         button.set_vexpand(True)
 
@@ -45,13 +44,11 @@ class CalculatorGrid(Gtk.Grid):
         """Handle evaluation."""
         if self.calculator.logic:
              self.calculator.logic.evaluate()
-             self.calculator.update_display() # This will show result and reset cursor
-        
-        # Update history display
+             self.calculator.update_display()
+
         if hasattr(self.calculator, 'update_history_display'):
             self.calculator.update_history_display()
-        
-        # Update calculator name in sidebar
+
         if hasattr(self.calculator, 'trigger_name_update'):
             self.calculator.trigger_name_update()
 

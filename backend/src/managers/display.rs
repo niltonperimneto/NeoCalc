@@ -18,29 +18,22 @@ impl DisplayManager {
             return Ok(());
         }
 
-        // Get display widget: display = calc_widget.get_display_widget()
         let display = calc_widget.call_method0(py, "get_display_widget")?;
 
-        // Always update history
         calc_widget.call_method0(py, "update_history_display")?;
 
-        // Check parent
         let parent = display.call_method0(py, "get_parent")?;
-        
+
         if parent.is(&self.placeholder) {
-            // Already in stack, just show it
+
             self.placeholder.call_method1(py, "set_visible_child", (&display,))?;
             return Ok(());
         }
 
-        // If it has a different parent, remove it first? 
-        // GTK4 usually reparents automatically or warns. Safe to unparent.
         if !parent.is_none(py) {
              parent.call_method1(py, "remove", (&display,))?;
         }
 
-        // Add to stack and show
-        // Using "add_child" for GtkStack
         self.placeholder.call_method1(py, "add_child", (&display,))?;
         self.placeholder.call_method1(py, "set_visible_child", (&display,))?;
 

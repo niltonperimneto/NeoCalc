@@ -12,40 +12,40 @@ import gettext
 
 BASE_DIR = getattr(sys, 'frozen', False) and sys._MEIPASS or os.path.dirname(os.path.abspath(__file__))
 
-# Initialize Localization
+## Define location of locale files for translations, ensuring fallback to parent dir
 LOCALE_DIR = os.path.join(BASE_DIR, "locale")
-# Fallback to ../locale if we are in python_gui/ and locale is in root (development mode)
+
 if not os.path.exists(LOCALE_DIR):
     LOCALE_DIR = os.path.join(os.path.dirname(BASE_DIR), "locale")
 
 try:
-    # Try to load the user's locale
+    ## Attempt to load translations for current system locale
     trans = gettext.translation('neocalc', localedir=LOCALE_DIR, languages=None, fallback=True)
-    trans.install() 
+    trans.install()
 except Exception as e:
     print(f"Warning: Failed to load translations from {LOCALE_DIR}: {e}")
-    gettext.install('neocalc', LOCALE_DIR) # Fallback
-
+    gettext.install('neocalc', LOCALE_DIR)
 
 class CalculatorApp(Adw.Application):
     def __init__(self):
-        # Oh look, another calculator. Because the world definitely needed one more
-        # way to divide by zero and crash the economy.
-        # Force NON_UNIQUE to ensure it runs even if DBus thinks another one exists
+        ## Initialize the Adwaita application
+        ## application_id must be unique and match the desktop file
+
         super().__init__(application_id="com.nilton.calculator",
                          flags=Gio.ApplicationFlags.NON_UNIQUE)
 
     def do_activate(self):
+        ## On activation, create and present the main window
         Calculator(self).present()
 
 def main():
     import sys
-    # Ensure argv is valid for GApplication
+    ## Ensure correct argument handling (used by some packaging tools)
     argv = sys.argv
     if not argv or not argv[0]:
         argv = ["neocalc"]
-        
-    
+
+    ## Run the application
     CalculatorApp().run(argv)
 
 if __name__ == "__main__":

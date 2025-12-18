@@ -28,7 +28,7 @@ pub fn format_complex(c: Complex64) -> String {
         let re_str = format_float(re);
         let im_abs = im.abs();
         let im_str = format_float(im_abs);
-        
+
         if re.abs() < EPSILON {
              if im < 0.0 { format!("-{}i", im_str) } else { format!("{}i", im_str) }
         } else {
@@ -43,7 +43,7 @@ pub fn map_input_token(text: &str) -> &str {
         "×" => "*",
         "−" => "-",
         "π" => "pi",
-        "√" => "sqrt(", 
+        "√" => "sqrt(",
         _ => text,
     }
 }
