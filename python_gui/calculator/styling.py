@@ -93,7 +93,7 @@ class StyleManager:
         """Opens a file chooser dialog to import a CSS theme."""
         dialog = Gtk.FileChooserNative(
             title="Import Theme",
-            parent=parent_window,
+            transient_for=parent_window,
             action=Gtk.FileChooserAction.OPEN
         )
         
