@@ -25,7 +25,6 @@ class CalculatorApp(Adw.Application):
 
 def main():
     import sys
-    print("Python: Entering main()", file=sys.stderr, flush=True)
     # Ensure argv is valid for GApplication
     argv = sys.argv
     if not argv or not argv[0]:

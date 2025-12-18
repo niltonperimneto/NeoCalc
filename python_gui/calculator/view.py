@@ -2,7 +2,7 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, Gtk
+from gi.repository import Adw, Gtk, GLib
 
 from .grid_scientific import ScientificGrid
 from .grid_standard import ButtonGrid
@@ -15,8 +15,10 @@ class CalculatorWidget(Gtk.Box):
         
         self.parent_window = None  # Will be set by window when adding instance
         self.logic = CalculatorLogic() # Instance-specific logic
-        self.logic = CalculatorLogic() # Instance-specific logic/backend
-        self.expression_state = "0"
+        self.logic = CalculatorLogic() # Instance-specific logic
+        
+        # Initial display sync
+        GLib.idle_add(self.update_display)
 
         # Key Controller for input handling
         key_controller = Gtk.EventControllerKey()
@@ -119,10 +121,23 @@ class CalculatorWidget(Gtk.Box):
 
     # --- input interface for Grids ---
     def get_expression(self):
-        return self.expression_state
+        # Delegate to logic
+        return self.logic.get_buffer()
 
     def set_expression(self, text):
-        self.expression_state = text
+        # Legacy hook, ideally we call logic directly.
+        # But if grids call this with a string, we might desync if we don't handle it carefully.
+        # Actually grids assume they are managing state via set_expression(result).
+        # We should update grids too.
+        # For now, if this is called with a result (from evaluate), we update display.
+        # But if it's called with "text" from append... 
+        # Refactor: this method just updates display.
+        self.display_label.set_text(text)
+        if self.on_expression_changed:
+            self.on_expression_changed(text)
+
+    def update_display(self):
+        text = self.logic.get_buffer()
         self.display_label.set_text(text)
         if self.on_expression_changed:
             self.on_expression_changed(text)
@@ -130,48 +145,35 @@ class CalculatorWidget(Gtk.Box):
     # --- input handling ---
     def on_key_pressed(self, controller, keyval, keycode, state):
         # Handle digits and operators directly
-        from gi.repository import Gdk
+        from gi.repository import Gdk, GLib
         
         # Determine character
         key_char = Gdk.keyval_to_unicode(keyval)
         valid_chars = "0123456789.+-*/^%()"
         
         if key_char and chr(key_char) in valid_chars:
-            new_text = self.logic.append_text(self.expression_state, chr(key_char))
-            self.set_expression(new_text)
+            self.logic.input(chr(key_char))
+            self.update_display()
             return True
             
         name = Gdk.keyval_name(keyval)
         
         if name == "BackSpace":
-             # Poor man's backspace if backend doesn't support it directly yet?
-             # Actually backend usually just replaces text.
-             # Let's assume user wants to delete last char. 
-             # Logic refactor might be needed for proper backspace if complex.
-             # For now: simple string slice if state matches logic?
-             # No, 'logic.append_text' handles logic. 
-             # We need 'logic.backspace'? Or just manual manipulation.
-             if len(self.expression_state) > 0:
-                 # Cleanest is to let logic handle it, but logic API is 'append_text' or 'evaluate'.
-                 # Let's simple slice for now, assuming logic is stateless regarding *undo* (it mostly is).
-                 # Wait, 'append_text' might do complex formatting.
-                 # Ideally we add 'delete_last' to logic. But for now:
-                 if len(self.expression_state) == 1:
-                     self.set_expression("0")
-                 elif self.expression_state != "0":
-                     self.set_expression(self.expression_state[:-1])
+             self.logic.backspace()
+             self.update_display()
              return True
 
         elif name in ("Return", "KP_Enter"):
             # Evaluate
-            result = self.logic.evaluate(self.expression_state)
-            self.set_expression(result)
+            self.logic.evaluate() # No arg uses buffer
+            self.update_display() 
             self.update_history_display()
             self.trigger_name_update()
             return True
         
         elif name == "Escape":
-            self.set_expression(self.logic.clear())
+            self.logic.clear()
+            self.update_display()
             return True
 
         return False

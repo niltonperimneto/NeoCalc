@@ -1,7 +1,6 @@
 use pyo3::prelude::*;
 use pyo3::types::PyList;
 use std::env;
-use std::io::{self, Write};
 use neocalc_backend::neocalc_backend;
 
 // Using 'current_thread' because GTK demands the main thread like a diva.
@@ -9,8 +8,6 @@ use neocalc_backend::neocalc_backend;
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> PyResult<()> {
     // 1. Inject the Rust backend module into Python.
-    eprintln!("Rust: Starting initialization...");
-    io::stderr().flush().unwrap();
     // I read in the docs that this is how you do it. 
     // It feels dirty, like global variables.
     pyo3::append_to_inittab!(neocalc_backend);

@@ -1,6 +1,6 @@
 import neocalc_backend
+# Re-export these for window.py
 from neocalc_backend import DisplayManager, CalculatorManager
-import asyncio
 
 class CalculatorLogic:
     """
@@ -12,47 +12,37 @@ class CalculatorLogic:
         # Create a fresh Rust backend instance for this logic controller
         self._calc = neocalc_backend.Calculator()
 
-    def append_text(self, current_text: str, new_text: str) -> str:
+    def input(self, text: str) -> str:
         """
-        String manipulation.
+        Send input to Rust and return new state.
         """
-        if current_text == "Error":
-            current_text = ""
-        
-        symbol_map = {
-            "÷": "/",
-            "×": "*",
-            "−": "-",
-            "π": "pi",
-        }
-        new_text = symbol_map.get(new_text, new_text)
-        
-        return current_text + new_text
+        return self._calc.input(text)
 
-    def append_function(self, current_text: str, func_name: str) -> str:
+    def backspace(self) -> str:
         """
-        Appending a function.
+        Remove last token.
         """
-        if current_text == "Error":
-            current_text = ""
-            
-        func_map = {
-            "√": "sqrt"
-        }
-        effective_name = func_map.get(func_name, func_name)
-        
-        return current_text + effective_name + "("
+        return self._calc.backspace()
 
     def clear(self) -> str:
-        return ""
+        """
+        Clear buffer.
+        """
+        return self._calc.clear()
+        
+    def get_buffer(self) -> str:
+        """
+        Get current state.
+        """
+        return self._calc.get_buffer()
 
-    def evaluate(self, current_text: str) -> str:
+    def evaluate(self, current_text: str = None) -> str:
         """
         Calling Rust instance.
         """
         return self._calc.evaluate(current_text)
 
-    async def evaluate_async(self, current_text: str) -> str:
+    async def evaluate_async(self, current_text: str = None) -> str:
         """
         Async evaluation. 
         I don't know how Tokio works, but await makes it look easy.

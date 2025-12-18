@@ -1,7 +1,7 @@
 import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk
-from .backend import CalculatorLogic
+
 
 class CalculatorGrid(Gtk.Grid):
     """Base class for calculator grids handling common button actions."""
@@ -12,21 +12,18 @@ class CalculatorGrid(Gtk.Grid):
 
     def on_button_clicked(self, button):
         """Handle standard digit and operator clicks."""
-        current = self.calculator.get_expression()
         if self.calculator.logic:
-             new_text = self.calculator.logic.append_text(current, button.get_label())
+             self.calculator.logic.input(button.get_label())
+             self.calculator.update_display()
         else:
-             new_text = current + button.get_label()
-        self.calculator.set_expression(new_text)
+             # Fallback (shouldn't happen)
+             pass
 
     def on_equal_clicked(self, button):
         """Handle evaluation."""
-        expression = self.calculator.get_expression()
         if self.calculator.logic:
-             result_text = self.calculator.logic.evaluate(expression)
-        else:
-             result_text = "Error"
-        self.calculator.set_expression(result_text)
+             self.calculator.logic.evaluate()
+             self.calculator.update_display()
         
         # Update history display
         if hasattr(self.calculator, 'update_history_display'):
@@ -39,16 +36,11 @@ class CalculatorGrid(Gtk.Grid):
     def on_clear_clicked(self, button):
         """Handle clear action."""
         if self.calculator.logic:
-             new_text = self.calculator.logic.clear()
-        else:
-             new_text = ""
-        self.calculator.set_expression(new_text)
+             self.calculator.logic.clear()
+             self.calculator.update_display()
 
     def on_func_clicked(self, button):
         """Handle scientific function clicks."""
-        current = self.calculator.get_expression()
         if self.calculator.logic:
-             new_text = self.calculator.logic.append_function(current, button.get_label())
-        else:
-             new_text = current
-        self.calculator.set_expression(new_text)
+             self.calculator.logic.input(button.get_label())
+             self.calculator.update_display()

@@ -15,6 +15,7 @@ struct Calculator {
     // I had to use Arc<Mutex<>> because the borrow checker kept yelling at me.
     // I just want to share a list, why is it so hard?
     history: Arc<Mutex<Vec<String>>>,
+    input_buffer: Arc<Mutex<String>>,
 }
 
 fn format_complex(c: Complex64) -> String {
@@ -44,38 +45,110 @@ impl Calculator {
         Calculator {
             // Arc::new(Mutex::new(...)) - I feel like I'm casting a spell.
             history: Arc::new(Mutex::new(Vec::new())),
+            input_buffer: Arc::new(Mutex::new(String::from("0"))),
         }
     }
 
-    fn evaluate(&self, expression: String) -> String {
+    fn input(&self, text: String) -> String {
+        let mut buffer = self.input_buffer.lock().unwrap();
+        
+        if *buffer == "0" && text != "." && text != ")" {
+            *buffer = text;
+        } else {
+             // Basic mapping logic moved from Python
+             let mapped = match text.as_str() {
+                 "÷" => "/",
+                 "×" => "*",
+                 "−" => "-",
+                 "π" => "pi",
+                 "√" => "sqrt(", 
+                 _ => text.as_str(),
+             };
+             
+             buffer.push_str(mapped);
+             
+             // Simple heuristic for functions without needing explicit type info
+             let funcs = ["sin", "cos", "tan", "asin", "acos", "atan", "sinh", "cosh", "tanh", "log", "ln", "sqrt", "abs"];
+             if funcs.contains(&mapped) {
+                 buffer.push('(');
+             }
+        }
+        buffer.clone()
+    }
+
+    fn backspace(&self) -> String {
+        let mut buffer = self.input_buffer.lock().unwrap();
+        if buffer.len() > 0 {
+            buffer.pop();
+            if buffer.is_empty() {
+                *buffer = "0".to_string();
+            }
+        }
+        buffer.clone()
+    }
+
+    fn clear(&self) -> String {
+        let mut buffer = self.input_buffer.lock().unwrap();
+        *buffer = "0".to_string();
+        buffer.clone()
+    }
+
+    fn get_buffer(&self) -> String {
+        self.input_buffer.lock().unwrap().clone()
+    }
+
+    fn evaluate(&self, _expression: Option<String>) -> String {
+        // If expression provided (legacy/compat), use it. 
+        // Otherwise use buffer.
+        let expr_to_eval = if let Some(e) = _expression {
+            e
+        } else {
+            self.input_buffer.lock().unwrap().clone()
+        };
+
         // Calling my 'engine'. It's just a file I copied from StackOverflow (kidding... mostly).
-        let res = engine::evaluate(&expression);
+        let res = engine::evaluate(&expr_to_eval);
         let output = match res {
             Ok(c) => format_complex(c),
             Err(_) => "Error".to_string(), // Error handling is hard, let's just return a string.
         };
 
-        if output != "Error" && !expression.trim().is_empty() {
+        if output != "Error" && !expr_to_eval.trim().is_empty() {
             // lock()? unwrap()? I hope this doesn't panic.
             if let Ok(mut h) = self.history.lock() {
-                h.push(format!("{} = {}", expression, output));
+                h.push(format!("{} = {}", expr_to_eval, output));
+            }
+            // Update buffer with result if we used internal buffer
+            if let Ok(mut b) = self.input_buffer.lock() {
+                *b = output.clone();
             }
         }
         output
     }
 
-    fn evaluate_async<'py>(&self, py: Python<'py>, expression: String) -> PyResult<Bound<'py, PyAny>> {
+    fn evaluate_async<'py>(&self, py: Python<'py>, expression: Option<String>) -> PyResult<Bound<'py, PyAny>> {
+        let buffer_val = if let Some(e) = expression {
+            e
+        } else {
+            self.input_buffer.lock().unwrap().clone()
+        };
+        
         let history = self.history.clone();
+        let buffer_arc = self.input_buffer.clone();
+
         tokio::future_into_py(py, async move {
-            let res = engine::evaluate(&expression);
+            let res = engine::evaluate(&buffer_val);
             let output = match res {
                 Ok(c) => format_complex(c),
                 Err(_) => "Error".to_string(),
             };
 
-            if output != "Error" && !expression.trim().is_empty() {
+            if output != "Error" && !buffer_val.trim().is_empty() {
                 if let Ok(mut h) = history.lock() {
-                    h.push(format!("{} = {}", expression, output));
+                     h.push(format!("{} = {}", buffer_val, output));
+                }
+                if let Ok(mut b) = buffer_arc.lock() {
+                    *b = output.clone();
                 }
             }
             Ok(output)

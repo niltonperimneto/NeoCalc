@@ -78,7 +78,7 @@ class Calculator(Adw.ApplicationWindow):
 
         # 3. Tab View (Content)
         self.tab_view = Adw.TabView()
-        self.tab_view.connect("notify::selected-page", self.on_tab_page_changed)
+        # Rust backend handles: self.tab_view.connect("notify::selected-page", self.on_tab_page_changed)
         self.tab_view.set_vexpand(True)
         self.tab_view.set_hexpand(True)
         content_box.append(self.tab_view)
@@ -102,23 +102,13 @@ class Calculator(Adw.ApplicationWindow):
     def _show_sidebar_after_resize(self):
         self.split_view.set_show_sidebar(True)
         self.set_size_request(320, 400)
-    # switch_display_for is REMOVED
-    pass
+        return False
 
     def setup_keyboard_controller(self):
         # We now rely on standard Actions for Alt+N shortcuts.
         # No manual controller needed.
         pass
 
-    def on_toggle_sidebar(self, button):
-        current_state = self.split_view.get_show_sidebar()
-        new_state = not current_state
-        self.split_view.set_show_sidebar(new_state)
-
-    def _show_sidebar_after_resize(self):
-        # Deprecated logic removed
-        return False
-        
     # --- Delegation to Managers (for compatibility/signaling) ---
     def add_calculator_instance(self):
         self.calc_manager.add_calculator_instance()
@@ -131,75 +121,6 @@ class Calculator(Adw.ApplicationWindow):
         
     def switch_display_for(self, calc_widget):
         self.display_manager.switch_display_for(calc_widget)
-
-    # --- Actions delegated from ActionRegistry ---
-        preview_label = Gtk.Label(label="0")
-        preview_label.set_xalign(1)
-        preview_label.add_css_class("calc-preview")
-        preview_label.set_wrap(True)
-        preview_label.set_max_width_chars(20)
-        row_box.append(preview_label)
-        
-        row.set_child(row_box)
-        
-        # Store references
-        row.calc_widget = calc_widget
-        row.calc_name = name
-        row.calc_number = self.instance_count
-        row.preview_label = preview_label
-        row.title_label = title_label
-        
-        self.sidebar_view.add_row(row)
-        self.calculator_widgets.append(calc_widget)
-        
-        self.sidebar_view.select_row(row)
-        
-        # Add display to stack
-        self.display_stack.add_named(calc_widget.get_display_widget(), name)
-        
-        # If this is the selected page, show it
-        if self.tab_view.get_selected_page() == page:
-            self.display_stack.set_visible_child_name(name)
-            calc_widget.grab_focus()
-        
-        calc_widget.on_expression_changed = lambda text: preview_label.set_text(text or "0")
-
-    def update_calculator_name(self, calc_widget):
-        from ..backend import CalculatorLogic
-        if not hasattr(calc_widget, 'logic'):
-            return
-        history = calc_widget.logic.get_history()
-        
-        if not history:
-            return
-        
-        n_pages = self.tab_view.get_n_pages()
-        for i in range(n_pages):
-            page = self.tab_view.get_nth_page(i)
-            if hasattr(page, 'calc_widget') and page.calc_widget is calc_widget:
-                latest = history[-1].split(' = ')[0]
-                if len(latest) > 20:
-                    latest = latest[:17] + "..."
-                page.set_title(latest if latest else f"Calculator {page.calc_number}")
-                break
-
-    def on_close_calculator_clicked(self, tab_view, page):
-        # Prevent recursion: DO NOT Call tab_view.close_page(page)
-        # Note: at this point, page is NOT yet detached from model list? 
-        # Actually 'close-page' allows checking strictness.
-        # But 'page-detached' is where we should sync the sidebar.
-        pass
-            
-    def on_close_calculator_from_sidebar(self, calc_widget):
-        n_pages = self.tab_view.get_n_pages()
-        for i in range(n_pages):
-            page = self.tab_view.get_nth_page(i)
-            if hasattr(page, 'calc_widget') and page.calc_widget is calc_widget:
-                self.tab_view.close_page(page)
-                break
-        
-        if self.tab_view.get_n_pages() == 0:
-            self.add_calculator_instance()
 
     def on_type_dropdown_changed(self, dropdown, param):
         idx = dropdown.get_selected()
@@ -225,24 +146,3 @@ class Calculator(Adw.ApplicationWindow):
                 self.tab_view.set_selected_page(page)
                 if hasattr(page, 'calc_widget'):
                     self.display_manager.switch_display_for(page.calc_widget)
-
-    # End of Calculator class
-
-
-    def on_tab_page_changed(self, tab_view, param):
-        page = tab_view.get_selected_page()
-        if page and hasattr(page, 'calc_widget'):
-            calc_widget = page.calc_widget
-            if hasattr(page, 'calc_name'):
-                self.display_stack.set_visible_child_name(page.calc_name)
-            
-            # Important: Grab focus for keyboard input!
-            calc_widget.grab_focus()
-
-    def on_sidebar_row_selected(self, box, row):
-        if row is not None and hasattr(row, 'calc_widget'):
-            n_pages = self.tab_view.get_n_pages()
-            for i in range(n_pages):
-                page = self.tab_view.get_nth_page(i)
-                if hasattr(page, 'calc_widget') and page.calc_widget is row.calc_widget:
-                    self.tab_view.set_selected_page(page)
