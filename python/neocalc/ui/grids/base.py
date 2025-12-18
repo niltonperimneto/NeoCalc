@@ -14,26 +14,31 @@ class CalculatorGrid(Gtk.Grid):
         """Creates buttons from a list of tuples and attaches them to the grid."""
         for label, callback, col, row, width, height in buttons_info:
             button = Gtk.Button(label=label)
+            button.set_focusable(False) # Prevent focus stealing from display
             button.connect("clicked", callback)
-            button.add_css_class("calc-grid-button")
-            
-            if label == "=":
-                button.add_css_class("suggested-action")
-            elif label == "C":
-                button.add_css_class("destructive-action")
-            
-            # Special layout handling for operators in standard grid (Col 3)
-            # This is a bit specific but safe to generalize or keep flexible
-            if col == 3 and not self.get_column_homogeneous(): 
-                 # Only if we are not homogeneous (Standard Grid)
-                 # Check if this column is meant to be thin
-                 button.set_hexpand(False)
-                 button.set_size_request(70, -1)
-            else:
-                 button.set_hexpand(True)
+            self._apply_button_styles(button, label)
+            self._apply_button_layout(button, col)
 
-            button.set_vexpand(True)
             self.attach(button, col, row, width, height)
+
+    def _apply_button_styles(self, button, label):
+        """Applies CSS classes based on button label/type."""
+        button.add_css_class("calc-grid-button")
+        if label == "=":
+            button.add_css_class("suggested-action")
+        elif label == "C":
+            button.add_css_class("destructive-action")
+
+    def _apply_button_layout(self, button, col):
+        """Configures button expansion and sizing."""
+        # Special layout handling for operators in standard grid (Col 3)
+        if col == 3 and not self.get_column_homogeneous(): 
+             # Only if we are not homogeneous (Standard Grid)
+             button.set_hexpand(False)
+             button.set_size_request(70, -1)
+        else:
+             button.set_hexpand(True)
+        button.set_vexpand(True)
 
     def on_button_clicked(self, button):
         """Handle standard digit and operator clicks."""

@@ -13,6 +13,19 @@ class CalculatorDisplay(Gtk.Box):
         'activated': (GObject.SignalFlags.RUN_FIRST, None, ()),
     }
 
+    INPUT_MAPPINGS = {
+        "÷": "/",
+        "×": "*",
+        "−": "-",
+        "π": "pi",
+        "√": "sqrt(",
+    }
+
+    AUTO_PAREN_FUNCTIONS = {
+        "sin", "cos", "tan", "asin", "acos", "atan", 
+        "sinh", "cosh", "tanh", "log", "ln", "sqrt", "abs"
+    }
+
     def __init__(self, **kwargs):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=4, **kwargs)
         
@@ -69,17 +82,10 @@ class CalculatorDisplay(Gtk.Box):
     def insert_at_cursor(self, text):
         """Insert text at current cursor position, handling mapping."""
         # Map characters
-        mapping = {
-            "÷": "/",
-            "×": "*",
-            "−": "-",
-            "π": "pi",
-            "√": "sqrt(",
-        }
-        text = mapping.get(text, text)
+        text = self.INPUT_MAPPINGS.get(text, text)
         
         # Auto-paren logic
-        if text in ["sin", "cos", "tan", "asin", "acos", "atan", "sinh", "cosh", "tanh", "log", "ln", "sqrt", "abs"]:
+        if text in self.AUTO_PAREN_FUNCTIONS:
             text += "("
 
         current_text = self.display_entry.get_text()
@@ -96,7 +102,6 @@ class CalculatorDisplay(Gtk.Box):
         self._internal_update = True
         self.display_entry.set_text(new_text)
         self.display_entry.set_position(new_pos)
-        self.display_entry.grab_focus()
         self._internal_update = False
         
         self.emit('user-edited', new_text)
@@ -124,7 +129,6 @@ class CalculatorDisplay(Gtk.Box):
         self._internal_update = True
         self.display_entry.set_text(new_text)
         self.display_entry.set_position(new_pos)
-        self.display_entry.grab_focus()
         self._internal_update = False
         
         self.emit('user-edited', new_text)
