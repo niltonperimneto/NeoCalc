@@ -1,0 +1,64 @@
+/* Catppuccin Frappe Theme */
+window,
+.background {
+    background-color: #303446;
+    color: #c6d0f5;
+}
+
+headerbar {
+    background-color: #292c3c;
+    color: #c6d0f5;
+    border-bottom: 1px solid #414559;
+}
+
+/* Calculators Grid */
+.calc-grid-button {
+    background-color: #414559;
+    color: #c6d0f5;
+    border: 1px solid #51576d;
+}
+
+.calc-grid-button:hover {
+    background-color: #51576d;
+}
+
+.calc-grid-button:active {
+    background-color: #ca9ee6;
+    color: #303446;
+}
+
+/* Unique accents */
+.calc-grid-button.accent {
+    background-color: #ca9ee6;
+    /* Mauve */
+    color: #303446;
+}
+
+.calc-grid-button.accent:hover {
+    background-color: #f4b8e4;
+}
+
+/* Display Area */
+.calculator-display-header {
+    background-color: #303446;
+    color: #c6d0f5;
+}
+
+.calc-entry-display {
+    color: #c6d0f5;
+}
+
+.calc-history {
+    color: #a5adce;
+}
+
+/* Sidebar */
+.sidebar {
+    background-color: #292c3c;
+    border-right: 1px solid #414559;
+}
+
+.sidebar-list row:selected {
+    background-color: #ca9ee6;
+    color: #303446;
+}

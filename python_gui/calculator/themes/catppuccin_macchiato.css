@@ -1,0 +1,64 @@
+/* Catppuccin Macchiato Theme */
+window,
+.background {
+    background-color: #24273a;
+    color: #cad3f5;
+}
+
+headerbar {
+    background-color: #1e2030;
+    color: #cad3f5;
+    border-bottom: 1px solid #363a4f;
+}
+
+/* Calculators Grid */
+.calc-grid-button {
+    background-color: #363a4f;
+    color: #cad3f5;
+    border: 1px solid #494d64;
+}
+
+.calc-grid-button:hover {
+    background-color: #494d64;
+}
+
+.calc-grid-button:active {
+    background-color: #c6a0f6;
+    color: #24273a;
+}
+
+/* Unique accents */
+.calc-grid-button.accent {
+    background-color: #c6a0f6;
+    /* Mauve */
+    color: #24273a;
+}
+
+.calc-grid-button.accent:hover {
+    background-color: #f5bde6;
+}
+
+/* Display Area */
+.calculator-display-header {
+    background-color: #24273a;
+    color: #cad3f5;
+}
+
+.calc-entry-display {
+    color: #cad3f5;
+}
+
+.calc-history {
+    color: #a5adcb;
+}
+
+/* Sidebar */
+.sidebar {
+    background-color: #1e2030;
+    border-right: 1px solid #363a4f;
+}
+
+.sidebar-list row:selected {
+    background-color: #c6a0f6;
+    color: #24273a;
+}
