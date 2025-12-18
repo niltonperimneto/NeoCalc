@@ -8,9 +8,24 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 from calculator.ui.window import Calculator
+import gettext
 
 BASE_DIR = getattr(sys, 'frozen', False) and sys._MEIPASS or os.path.dirname(os.path.abspath(__file__))
-BASE_DIR = getattr(sys, 'frozen', False) and sys._MEIPASS or os.path.dirname(os.path.abspath(__file__))
+
+# Initialize Localization
+LOCALE_DIR = os.path.join(BASE_DIR, "locale")
+# Fallback to ../locale if we are in python_gui/ and locale is in root (development mode)
+if not os.path.exists(LOCALE_DIR):
+    LOCALE_DIR = os.path.join(os.path.dirname(BASE_DIR), "locale")
+
+try:
+    # Try to load the user's locale
+    trans = gettext.translation('neocalc', localedir=LOCALE_DIR, languages=None, fallback=True)
+    trans.install() 
+except Exception as e:
+    print(f"Warning: Failed to load translations from {LOCALE_DIR}: {e}")
+    gettext.install('neocalc', LOCALE_DIR) # Fallback
+
 
 class CalculatorApp(Adw.Application):
     def __init__(self):

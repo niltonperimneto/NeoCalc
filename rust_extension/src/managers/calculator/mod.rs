@@ -5,7 +5,9 @@ pub mod helpers;
 use pyo3::prelude::*;
 use std::sync::{Arc, Mutex};
 use pyo3::exceptions::PyRuntimeError;
+
 use constants::*;
+use gettextrs::gettext;
 
 /// Manages calculator instances, sidebar rows, and tab pages.
 #[pyclass]
@@ -70,7 +72,7 @@ impl CalculatorManager {
             *count = new_count;
         }
 
-        let title = format!("Calculator {}", new_count);
+        let title = format!("{} {}", gettext("Calculator"), new_count);
         let name = format!("calc_{}", new_count);
 
         // 1. Create Python Widget

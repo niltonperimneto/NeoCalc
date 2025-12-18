@@ -23,7 +23,7 @@ class HeaderView(Adw.Bin):
     def setup_ui(self):
         # Toggle Sidebar Button
         toggle_btn = Gtk.Button(icon_name="sidebar-show-symbolic")
-        toggle_btn.set_tooltip_text("Toggle Sidebar")
+        toggle_btn.set_tooltip_text(_("Toggle Sidebar"))
         toggle_btn.connect("clicked", self.main_window.on_toggle_sidebar)
         toggle_btn.add_css_class("header-btn")
         self.header_bar.pack_start(toggle_btn)
@@ -36,8 +36,8 @@ class HeaderView(Adw.Bin):
         
     def setup_dropdown(self):
         type_model = Gio.ListStore(item_type=GObject.Object)
-        type_model.append(CalcType("Standard", "view-grid-symbolic"))
-        type_model.append(CalcType("Scientific", "applications-science-symbolic"))
+        type_model.append(CalcType(_("Standard"), "view-grid-symbolic"))
+        type_model.append(CalcType(_("Scientific"), "applications-science-symbolic"))
 
         factory = Gtk.SignalListItemFactory()
         def setup_factory(factory, list_item):
@@ -73,10 +73,11 @@ class HeaderView(Adw.Bin):
         menu_model = Gio.Menu()
         
         # Themes Submenu
+        # Themes Submenu
         themes_menu = Gio.Menu()
         
         # Default Theme
-        themes_menu.append("Default", "win.set_theme('default')")
+        themes_menu.append(_("Default"), "win.set_theme('default')")
         
         # Dynamic Themes
         for theme_name in StyleManager.get_available_themes():
@@ -84,13 +85,13 @@ class HeaderView(Adw.Bin):
             display_name = theme_name.replace("_", " ").title()
             themes_menu.append(display_name, f"win.set_theme('{theme_name}')")
             
-        themes_menu.append("Import Theme...", "win.import_theme")
+        themes_menu.append(_("Import Theme..."), "win.import_theme")
         
-        menu_model.append_submenu("Themes", themes_menu)
+        menu_model.append_submenu(_("Themes"), themes_menu)
         
         # Other items
-        menu_model.append("Keyboard Shortcuts", "win.show_shortcuts")
-        menu_model.append("About", "win.about")
+        menu_model.append(_("Keyboard Shortcuts"), "win.show_shortcuts")
+        menu_model.append(_("About"), "win.about")
         
         menu_btn = Gtk.MenuButton()
         menu_btn.set_icon_name("open-menu-symbolic")

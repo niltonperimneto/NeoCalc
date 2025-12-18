@@ -3,11 +3,17 @@ use pyo3::types::PyList;
 use std::env;
 use std::path::PathBuf;
 use neocalc_backend::neocalc_backend;
+use gettextrs::*;
 
 // Using 'current_thread' because GTK demands the main thread like a diva.
 // Also, making this async because someone on Reddit said it's "Mockern".
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> PyResult<()> {
+    // 0. Initialize Serialization (Standard Gettext)
+    setlocale(LocaleCategory::LcAll, "");
+    bindtextdomain("neocalc", "locale").expect("Failed to bind text domain");
+    textdomain("neocalc").expect("Failed to set text domain");
+
     // 1. Inject the Rust backend module into Python.
     // I read in the docs that this is how you do it. 
     // It feels dirty, like global variables.
@@ -65,7 +71,7 @@ async fn main() -> PyResult<()> {
 
         let gui_dir = found_path.ok_or_else(|| {
             PyErr::new::<pyo3::exceptions::PyFileNotFoundError, _>(
-                "Could not find 'python_gui' directory. It's gone. Reduced to atoms."
+                gettext("Could not find 'python_gui' directory. It's gone. Reduced to atoms.")
             )
         })?;
 

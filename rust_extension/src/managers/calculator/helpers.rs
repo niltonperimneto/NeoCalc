@@ -110,7 +110,7 @@ pub fn renumber_instances(py: Python<'_>, tab_view: &Py<PyAny>, sidebar_view: &P
         let title = if let Some(last) = history.last() {
             format_title(last)
         } else {
-            format!("Calculator {}", new_number)
+            format!("{} {}", gettextrs::gettext("Calculator"), new_number)
         };
         
         page.call_method1(py, METHOD_SET_TITLE, (&title,))?;
