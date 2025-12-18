@@ -18,9 +18,6 @@ pub struct CalculatorManager {
     // State
     instance_count: Arc<Mutex<i32>>,
     calculator_widgets: Arc<Mutex<Vec<Py<PyAny>>>>,
-
-    // Async runtime helper
-    rt: tokio::runtime::Runtime,
 }
 
 #[pymethods]
@@ -32,11 +29,6 @@ impl CalculatorManager {
         sidebar_view: Py<PyAny>,
         display_manager: Py<PyAny>,
     ) -> PyResult<Self> {
-        let rt = tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()
-            .map_err(|e| PyRuntimeError::new_err(format!("Failed to create runtime: {}", e)))?;
-
         Ok(CalculatorManager {
             window,
             tab_view,
@@ -44,7 +36,6 @@ impl CalculatorManager {
             display_manager,
             instance_count: Arc::new(Mutex::new(0)),
             calculator_widgets: Arc::new(Mutex::new(Vec::new())),
-            rt,
         })
     }
 
