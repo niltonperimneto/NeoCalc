@@ -1,68 +1,15 @@
 use pyo3::prelude::*;
-use pyo3::types::PyModule;
-use pyo3::Bound;
 use pyo3::exceptions::PyRuntimeError;
 use pyo3_async_runtimes::tokio::future_into_py;
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex};
 
-mod engine;
-mod managers;
-
-use num_complex::Complex64;
-
-const EPSILON: f64 = 1e-10;
-
-/// Helper to lock a mutex and map poison errors to PyRuntimeError
-fn lock_mutex<T>(mutex: &Mutex<T>) -> PyResult<MutexGuard<'_, T>> {
-    mutex.lock().map_err(|e| PyRuntimeError::new_err(format!("Lock poisoned: {}", e)))
-}
-
-fn format_float(val: f64) -> String {
-    if val.fract().abs() < EPSILON {
-        (val.round() as i64).to_string()
-    } else {
-        val.to_string()
-    }
-}
-
-fn format_complex(c: Complex64) -> String {
-    let re = c.re;
-    let im = c.im;
-
-    if im.abs() < EPSILON {
-        format_float(re)
-    } else {
-        let re_str = format_float(re);
-        let im_abs = im.abs();
-        let im_str = format_float(im_abs);
-        
-        if re.abs() < EPSILON {
-             if im < 0.0 { format!("-{}i", im_str) } else { format!("{}i", im_str) }
-        } else {
-             format!("{} {} {}i", re_str, if im < 0.0 { "-" } else { "+" }, im_str)
-        }
-    }
-}
-
-fn map_input_token(text: &str) -> &str {
-    match text {
-        "÷" => "/",
-        "×" => "*",
-        "−" => "-",
-        "π" => "pi",
-        "√" => "sqrt(", 
-        _ => text,
-    }
-}
-
-fn should_auto_paren(token: &str) -> bool {
-    matches!(token, "sin" | "cos" | "tan" | "asin" | "acos" | "atan" | "sinh" | "cosh" | "tanh" | "log" | "ln" | "sqrt" | "abs")
-}
+use crate::engine;
+use crate::utils::{self, lock_mutex};
 
 /// The interface between Python (Dynamic Bliss) and Rust (Static Pain).
 #[pyclass]
 #[derive(Default)]
-struct Calculator {
+pub struct Calculator {
     history: Arc<Mutex<Vec<String>>>,
     input_buffer: Arc<Mutex<String>>,
 }
@@ -83,10 +30,10 @@ impl Calculator {
         if *buffer == "0" && text != "." && text != ")" {
             *buffer = text;
         } else {
-             let mapped = map_input_token(&text);
+             let mapped = utils::map_input_token(&text);
              buffer.push_str(mapped);
              
-             if should_auto_paren(mapped) {
+             if utils::should_auto_paren(mapped) {
                  buffer.push('(');
              }
         }
@@ -123,7 +70,7 @@ impl Calculator {
 
         let res = engine::evaluate(&expr_to_eval);
         let output = match res {
-            Ok(c) => format_complex(c),
+            Ok(c) => utils::format_complex(c),
             Err(_) => "Error".to_string(),
         };
 
@@ -161,7 +108,7 @@ impl Calculator {
             let output = tokio::task::spawn_blocking(move || {
                 let res = engine::evaluate(&expr_for_task);
                 match res {
-                    Ok(c) => format_complex(c),
+                    Ok(c) => utils::format_complex(c),
                     Err(_) => "Error".to_string(),
                 }
             }).await.map_err(|e| PyRuntimeError::new_err(format!("Join error: {}", e)))?;
@@ -189,12 +136,4 @@ impl Calculator {
         h.clear();
         Ok(())
     }
-}
-
-#[pymodule]
-pub fn neocalc_backend(m: &Bound<PyModule>) -> PyResult<()> {
-    m.add_class::<Calculator>()?;
-    m.add_class::<managers::DisplayManager>()?;
-    m.add_class::<managers::CalculatorManager>()?;
-    Ok(())
 }

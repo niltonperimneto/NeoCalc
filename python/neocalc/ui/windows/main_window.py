@@ -4,13 +4,13 @@ gi.require_version("Adw", "1")
 from gi.repository import Gtk, Adw, Gio, GLib, Gdk
 import os
 
-from ..about import present_about_dialog
-from ..view import CalculatorWidget
-from ..styling import StyleManager
-from ..actions import ActionRegistry
-from .sidebar import SidebarView
-from .header import HeaderView
-from ..backend import DisplayManager, CalculatorManager
+from ..dialogs.about import present_about_dialog
+from ..widgets.calculator import CalculatorWidget
+from ...styling.manager import StyleManager
+from ...core.actions import ActionRegistry
+from ..components.sidebar import SidebarView
+from ..components.header import HeaderView
+from ...core.backend import DisplayManager, CalculatorManager
 
 class Calculator(Adw.ApplicationWindow):
     def __init__(self, app):

@@ -7,7 +7,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
-from calculator.ui.window import Calculator
+from neocalc.ui.windows.main_window import Calculator
 import gettext
 
 BASE_DIR = getattr(sys, 'frozen', False) and sys._MEIPASS or os.path.dirname(os.path.abspath(__file__))

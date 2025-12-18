@@ -10,7 +10,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       
       - name: Install Dependencies
         run: |
@@ -20,13 +20,13 @@ jobs:
       - name: Build
         run: |
           export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
-          cargo build --release --manifest-path rust_frontend/Cargo.toml
+          cargo build --release --manifest-path launcher/Cargo.toml
           
       - name: Bundle
         run: |
           mkdir -p dist/NeoCalc
-          cp target/release/rust_frontend dist/NeoCalc/NeoCalc
-          cp -r python_gui dist/NeoCalc/
+          cp target/release/launcher dist/NeoCalc/NeoCalc
+          cp -r python dist/NeoCalc/
           cp README.md dist/NeoCalc/
           
       - name: Upload Artifact
@@ -38,7 +38,7 @@ jobs:
   build-flatpak:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       
       - name: Install Flatpak tools
         run: |
@@ -65,10 +65,10 @@ jobs:
                 build-args:
                   - --share=network
               build-commands:
-                - . /usr/lib/sdk/rust-stable/enable.sh && cargo build --release --manifest-path rust_frontend/Cargo.toml
-                - install -Dm755 target/release/rust_frontend /app/bin/neocalc
+                - . /usr/lib/sdk/rust-stable/enable.sh && cargo build --release --manifest-path launcher/Cargo.toml
+                - install -Dm755 target/release/launcher /app/bin/neocalc
                 - mkdir -p /app/share/neocalc
-                - cp -r python_gui /app/share/neocalc/
+                - cp -r python /app/share/neocalc/
               sources:
                 - type: dir
                   path: .
@@ -86,7 +86,7 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
@@ -105,14 +105,14 @@ jobs:
         shell: msys2 {0}
         run: |
           export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
-          cargo build --release --manifest-path rust_frontend/Cargo.toml
+          cargo build --release --manifest-path launcher/Cargo.toml
           
       - name: Bundle
         shell: msys2 {0}
         run: |
           mkdir -p dist/NeoCalc
-          cp target/release/rust_frontend.exe dist/NeoCalc/NeoCalc.exe
-          cp -r python_gui dist/NeoCalc/
+          cp target/release/launcher.exe dist/NeoCalc/NeoCalc.exe
+          cp -r python dist/NeoCalc/
           # Copy essential DLLs from UCRT64 environment
           cp /ucrt64/bin/libpython3*.dll dist/NeoCalc/
           cp /ucrt64/bin/libgtk-4-1.dll dist/NeoCalc/
@@ -152,7 +152,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       
       - name: Download all artifacts
         uses: actions/download-artifact@v4

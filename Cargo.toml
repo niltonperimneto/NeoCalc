@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "rust_extension",
-    "rust_frontend"
+    "backend",
+    "launcher"
 ]
 resolver = "2"

@@ -28,14 +28,14 @@ async fn main() -> PyResult<()> {
         // getattr("path")?.extract()?; -> The '?' operator is carrying this entire codebase.
         let sys_path: Bound<PyList> = sys.getattr("path")?.extract()?;
 
-        // 3. Find the 'python_gui' directory. 
+        // 3. Find the 'python' directory. 
         // We are going on a treasure hunt.
         let mut found_path: Option<PathBuf> = None;
         
         // Strategy A: Look relative to the executable (wherever we deployed this mess)
         if let Ok(exe_path) = env::current_exe() {
              if let Some(exe_dir) = exe_path.parent() {
-                 let candidate = exe_dir.join("python_gui");
+                 let candidate = exe_dir.join("python");
                  if candidate.exists() {
                      found_path = Some(candidate);
                  } else {
@@ -44,7 +44,7 @@ async fn main() -> PyResult<()> {
                      let mut current_search = exe_dir.to_path_buf();
                      for _ in 0..3 {
                         if let Some(parent) = current_search.parent() {
-                            let candidate = parent.join("python_gui");
+                            let candidate = parent.join("python");
                             if candidate.exists() {
                                 found_path = Some(candidate);
                                 break;
@@ -62,7 +62,7 @@ async fn main() -> PyResult<()> {
         // This is the fallback plan if Strategy A fails like my last startup.
         if found_path.is_none() {
              if let Ok(cwd) = env::current_dir() {
-                 let candidate = cwd.join("python_gui");
+                 let candidate = cwd.join("python");
                  if candidate.exists() {
                      found_path = Some(candidate);
                  }
@@ -71,24 +71,18 @@ async fn main() -> PyResult<()> {
 
         let gui_dir = found_path.ok_or_else(|| {
             PyErr::new::<pyo3::exceptions::PyFileNotFoundError, _>(
-                gettext("Could not find 'python_gui' directory. It's gone. Reduced to atoms.")
+                gettext("Could not find 'python' directory. It's gone. Reduced to atoms.")
             )
         })?;
 
-
-
-        // Add the found path to sys.path so Python can actually find the files
+        // Add the 'python' directory to sys.path so we can import 'neocalc' package from it
         sys_path.insert(0, gui_dir.to_string_lossy())?;
-        if let Some(parent) = gui_dir.parent() {
-             sys_path.insert(0, parent.to_string_lossy())?;
-        }
 
         // 4. Import the application module.
-        let app_path = gui_dir.join("app.py");
-        let app_module = py.import("app").map_err(|e| {
+        let app_module = py.import("neocalc.app").map_err(|e| {
              PyErr::new::<pyo3::exceptions::PyImportError, _>(
-                format!("Failed to import 'app'. \nPath value: {:?} \nError: {}\nIs app.py actually there? {}", 
-                    gui_dir, e, app_path.exists())
+                format!("Failed to import 'neocalc.app'. \nPath value: {:?} \nError: {}", 
+                    gui_dir, e)
             )
         })?;
         

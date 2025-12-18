@@ -22,7 +22,7 @@ dependencies = [
 Repository = "https://github.com/niltonperimneto/NeoCalc.git"
 
 [tool.setuptools.packages.find]
-where = ["python_gui"]
+where = ["python"]
 
 [project.scripts]
 NeoCalc = "app:main"

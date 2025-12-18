@@ -4,12 +4,11 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk, GLib
 
-from .grid_scientific import ScientificGrid
-from .grid_standard import ButtonGrid
-from .backend import CalculatorLogic
+from ..grids.scientific import ScientificGrid
+from ..grids.standard import ButtonGrid
+from ...core.backend import CalculatorLogic
 
-
-from .ui.display import CalculatorDisplay
+from ..components.display import CalculatorDisplay
 
 class CalculatorWidget(Gtk.Box):
     def __init__(self, **kwargs):
