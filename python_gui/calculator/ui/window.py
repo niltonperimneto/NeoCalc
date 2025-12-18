@@ -97,13 +97,26 @@ class Calculator(Adw.ApplicationWindow):
         pass
 
     def on_toggle_sidebar(self, button):
-        # We need to collapse split view if we are effectively toggling it off?
-        # Actually split view handles it via set_show_sidebar or set_collapsed.
-        # But OverlaySplitView: set_show_sidebar controls visibility when not collapsed.
-        # If collapsed, it's automatic? No.
-        
         current_state = self.split_view.get_show_sidebar()
-        self.split_view.set_show_sidebar(not current_state)
+        new_state = not current_state
+        
+        if new_state:
+            width = self.get_width()
+            if width < 600:
+                # Force expand first to avoid layout blinking
+                self.set_size_request(600, 500)
+                GLib.timeout_add(50, self._show_sidebar_after_resize)
+            else:
+                self.split_view.set_show_sidebar(True)
+        else:
+            self.split_view.set_show_sidebar(False)
+            GLib.timeout_add(100, lambda: self.set_default_size(320, 500) or False)
+
+    def _show_sidebar_after_resize(self):
+        self.split_view.set_show_sidebar(True)
+        # Reset constraint so user can resize back if desired
+        self.set_size_request(320, 400)
+        return False
 
         
     # --- Delegation to Managers (for compatibility/signaling) ---
