@@ -138,6 +138,12 @@ impl Calculator {
         Ok(output)
     }
 
+    fn set_expression(&self, expression: String) -> PyResult<()> {
+        let mut buffer = lock_mutex(&self.input_buffer)?;
+        *buffer = expression;
+        Ok(())
+    }
+
     fn evaluate_async<'py>(&self, py: Python<'py>, expression: Option<String>) -> PyResult<Bound<'py, PyAny>> {
         let buffer_val = if let Some(e) = expression {
             e
