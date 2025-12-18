@@ -1,7 +1,8 @@
 use pyo3::prelude::*;
 use pyo3::types::PyModule;
 use pyo3::Bound;
-use pyo3_async_runtimes::tokio;
+use pyo3::exceptions::PyRuntimeError;
+use pyo3_async_runtimes::tokio::future_into_py;
 use std::sync::{Arc, Mutex};
 
 mod engine;
@@ -12,10 +13,17 @@ use num_complex::Complex64;
 #[pyclass]
 #[derive(Default)]
 struct Calculator {
-    // I had to use Arc<Mutex<>> because the borrow checker kept yelling at me.
-    // I just want to share a list, why is it so hard?
     history: Arc<Mutex<Vec<String>>>,
     input_buffer: Arc<Mutex<String>>,
+}
+
+fn format_float(val: f64) -> String {
+    let epsilon = 1e-10;
+    if val.fract().abs() < epsilon {
+        (val.round() as i64).to_string()
+    } else {
+        val.to_string()
+    }
 }
 
 fn format_complex(c: Complex64) -> String {
@@ -24,14 +32,14 @@ fn format_complex(c: Complex64) -> String {
     let epsilon = 1e-10;
 
     if im.abs() < epsilon {
-        if re.fract().abs() < epsilon { (re.round() as i64).to_string() } else { re.to_string() }
+        format_float(re)
     } else {
-        let re_str = if re.fract().abs() < epsilon { (re.round() as i64).to_string() } else { re.to_string() };
+        let re_str = format_float(re);
         let im_abs = im.abs();
-        let im_str = if im_abs.fract().abs() < epsilon { (im_abs.round() as i64).to_string() } else { im_abs.to_string() };
+        let im_str = format_float(im_abs);
         
         if re.abs() < epsilon {
-             format!("{}i", if im < 0.0 { format!("-{}", im_str) } else { im_str })
+             if im < 0.0 { format!("-{}i", im_str) } else { format!("{}i", im_str) }
         } else {
              format!("{} {} {}i", re_str, if im < 0.0 { "-" } else { "+" }, im_str)
         }
@@ -43,14 +51,13 @@ impl Calculator {
     #[new]
     fn new() -> Self {
         Calculator {
-            // Arc::new(Mutex::new(...)) - I feel like I'm casting a spell.
             history: Arc::new(Mutex::new(Vec::new())),
             input_buffer: Arc::new(Mutex::new(String::from("0"))),
         }
     }
 
-    fn input(&self, text: String) -> String {
-        let mut buffer = self.input_buffer.lock().unwrap();
+    fn input(&self, text: String) -> PyResult<String> {
+        let mut buffer = self.input_buffer.lock().map_err(|e| PyRuntimeError::new_err(format!("Lock poisoned: {}", e)))?;
         
         if *buffer == "0" && text != "." && text != ")" {
             *buffer = text;
@@ -73,75 +80,75 @@ impl Calculator {
                  buffer.push('(');
              }
         }
-        buffer.clone()
+        Ok(buffer.clone())
     }
 
-    fn backspace(&self) -> String {
-        let mut buffer = self.input_buffer.lock().unwrap();
+    fn backspace(&self) -> PyResult<String> {
+        let mut buffer = self.input_buffer.lock().map_err(|e| PyRuntimeError::new_err(format!("Lock poisoned: {}", e)))?;
         if buffer.len() > 0 {
             buffer.pop();
             if buffer.is_empty() {
                 *buffer = "0".to_string();
             }
         }
-        buffer.clone()
+        Ok(buffer.clone())
     }
 
-    fn clear(&self) -> String {
-        let mut buffer = self.input_buffer.lock().unwrap();
+    fn clear(&self) -> PyResult<String> {
+        let mut buffer = self.input_buffer.lock().map_err(|e| PyRuntimeError::new_err(format!("Lock poisoned: {}", e)))?;
         *buffer = "0".to_string();
-        buffer.clone()
+        Ok(buffer.clone())
     }
 
-    fn get_buffer(&self) -> String {
-        self.input_buffer.lock().unwrap().clone()
+    fn get_buffer(&self) -> PyResult<String> {
+        Ok(self.input_buffer.lock().map_err(|e| PyRuntimeError::new_err(format!("Lock poisoned: {}", e)))?.clone())
     }
 
-    fn evaluate(&self, _expression: Option<String>) -> String {
-        // If expression provided (legacy/compat), use it. 
-        // Otherwise use buffer.
+    fn evaluate(&self, _expression: Option<String>) -> PyResult<String> {
         let expr_to_eval = if let Some(e) = _expression {
             e
         } else {
-            self.input_buffer.lock().unwrap().clone()
+            self.input_buffer.lock().map_err(|e| PyRuntimeError::new_err(format!("Lock poisoned: {}", e)))?.clone()
         };
 
-        // Calling my 'engine'. It's just a file I copied from StackOverflow (kidding... mostly).
         let res = engine::evaluate(&expr_to_eval);
         let output = match res {
             Ok(c) => format_complex(c),
-            Err(_) => "Error".to_string(), // Error handling is hard, let's just return a string.
+            Err(_) => "Error".to_string(),
         };
 
         if output != "Error" && !expr_to_eval.trim().is_empty() {
-            // lock()? unwrap()? I hope this doesn't panic.
             if let Ok(mut h) = self.history.lock() {
                 h.push(format!("{} = {}", expr_to_eval, output));
             }
-            // Update buffer with result if we used internal buffer
             if let Ok(mut b) = self.input_buffer.lock() {
                 *b = output.clone();
             }
         }
-        output
+        Ok(output)
     }
 
     fn evaluate_async<'py>(&self, py: Python<'py>, expression: Option<String>) -> PyResult<Bound<'py, PyAny>> {
         let buffer_val = if let Some(e) = expression {
             e
         } else {
-            self.input_buffer.lock().unwrap().clone()
+            self.input_buffer.lock().map_err(|e| PyRuntimeError::new_err(format!("Lock poisoned: {}", e)))?.clone()
         };
         
         let history = self.history.clone();
         let buffer_arc = self.input_buffer.clone();
+        
+        // Clone for the blocking task
+        let expr_for_task = buffer_val.clone();
 
-        tokio::future_into_py(py, async move {
-            let res = engine::evaluate(&buffer_val);
-            let output = match res {
-                Ok(c) => format_complex(c),
-                Err(_) => "Error".to_string(),
-            };
+        future_into_py(py, async move {
+            let output = tokio::task::spawn_blocking(move || {
+                let res = engine::evaluate(&expr_for_task);
+                match res {
+                    Ok(c) => format_complex(c),
+                    Err(_) => "Error".to_string(),
+                }
+            }).await.map_err(|e| PyRuntimeError::new_err(format!("Join error: {}", e)))?;
 
             if output != "Error" && !buffer_val.trim().is_empty() {
                 if let Ok(mut h) = history.lock() {
@@ -155,14 +162,14 @@ impl Calculator {
         })
     }
 
-    fn get_history(&self) -> Vec<String> {
-        self.history.lock().unwrap().clone()
+    fn get_history(&self) -> PyResult<Vec<String>> {
+        Ok(self.history.lock().map_err(|e| PyRuntimeError::new_err(format!("Lock poisoned: {}", e)))?.clone())
     }
     
-    fn clear_history(&self) {
-        if let Ok(mut h) = self.history.lock() {
-            h.clear();
-        }
+    fn clear_history(&self) -> PyResult<()> {
+        let mut h = self.history.lock().map_err(|e| PyRuntimeError::new_err(format!("Lock poisoned: {}", e)))?;
+        h.clear();
+        Ok(())
     }
 }
 

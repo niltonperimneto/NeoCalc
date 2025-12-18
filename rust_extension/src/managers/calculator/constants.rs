@@ -4,7 +4,6 @@ pub const ATTR_CALC_WIDGET: &str = "calc_widget";
 pub const ATTR_CALC_NAME: &str = "calc_name";
 pub const ATTR_CALC_NUMBER: &str = "calc_number";
 pub const ATTR_LOGIC: &str = "logic";
-pub const ATTR_HISTORY_LABEL: &str = "history_label";
 pub const ATTR_PREVIEW_LABEL: &str = "preview_label";
 pub const ATTR_TITLE_LABEL: &str = "title_label";
 pub const ATTR_SIDEBAR_LIST: &str = "sidebar_list";

@@ -20,7 +20,7 @@ pub struct CalculatorManager {
     calculator_widgets: Arc<Mutex<Vec<Py<PyAny>>>>,
 
     // Async runtime helper
-    rt: tokio::runtime::Runtime,
+    _rt: tokio::runtime::Runtime,
 }
 
 #[pymethods]
@@ -44,7 +44,7 @@ impl CalculatorManager {
             display_manager,
             instance_count: Arc::new(Mutex::new(0)),
             calculator_widgets: Arc::new(Mutex::new(Vec::new())),
-            rt,
+            _rt: rt,
         })
     }
 
