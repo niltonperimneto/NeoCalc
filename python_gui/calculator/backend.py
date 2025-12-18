@@ -9,11 +9,6 @@ class CalculatorLogic:
     """
     
     def __init__(self):
-        self._calc = neocalc_backend.Calculator()
-
-    def append_text(self, current_text: str, new_text: str) -> str:
-    
-    def __init__(self):
         # Create a fresh Rust backend instance for this logic controller
         self._calc = neocalc_backend.Calculator()
 
@@ -52,21 +47,6 @@ class CalculatorLogic:
         return ""
 
     def evaluate(self, current_text: str) -> str:
-        return self._calc.evaluate(current_text)
-
-    async def evaluate_async(self, current_text: str) -> str:
-        return await self._calc.evaluate_async(current_text)
-    
-    def get_history(self) -> list:
-        return self._calc.get_history()
-    
-    def clear_history(self) -> None:
-        self._calc.clear_history()
-
-        # Just return an empty string. No allocations... wait, everything is an allocation in Python.
-        return ""
-
-    def evaluate(self, current_text: str) -> str:
         """
         Calling Rust instance.
         """
@@ -88,6 +68,5 @@ class CalculatorLogic:
     def clear_history(self) -> None:
         """
         Telling Rust to forget everything. 
-        I wish I could forget how Move Semantics work.
         """
         self._calc.clear_history()

@@ -1,4 +1,4 @@
-from gi.repository import Gio
+from gi.repository import Gio, GLib
 from .about import present_about_dialog
 from .styling import StyleManager
 
@@ -32,6 +32,15 @@ class ActionRegistry:
             self.window.add_action(action)
             if app:
                 app.set_accels_for_action(f"win.switch_calc_{i}", [f"<Alt>{i}"])
+
+        # Theme Actions
+        action_import = Gio.SimpleAction.new("import_theme", None)
+        action_import.connect("activate", self.on_import_theme)
+        self.window.add_action(action_import)
+
+        action_set_theme = Gio.SimpleAction.new("set_theme", GLib.VariantType.new("s"))
+        action_set_theme.connect("activate", self.on_set_theme)
+        self.window.add_action(action_set_theme)
 
     def on_new_calculator_action(self, action, param):
         self.window.add_calculator_instance()
@@ -68,5 +77,18 @@ class ActionRegistry:
             page = self.window.tab_view.get_nth_page(calc_number - 1)
             if page:
                 self.window.tab_view.set_selected_page(page)
-                if hasattr(page, 'calc_widget'):
+            if hasattr(page, 'calc_widget'):
                     self.window.switch_display_for(page.calc_widget)
+
+    def on_import_theme(self, action, param):
+        StyleManager.import_theme(self.window)
+        # TODO: Ideally we should refresh the menu here, but that requires more plumbing.
+        # For now, a restart might be required to see the new theme in the menu, 
+        # or we trigger a header update if possible.
+
+    def on_set_theme(self, action, param):
+        theme_name = param.get_string()
+        if theme_name == "default":
+            StyleManager.load_css(None)
+        else:
+            StyleManager.load_css(theme_name)

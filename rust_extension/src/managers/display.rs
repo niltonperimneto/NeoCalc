@@ -21,31 +21,28 @@ impl DisplayManager {
         // Get display widget: display = calc_widget.get_display_widget()
         let display = calc_widget.call_method0(py, "get_display_widget")?;
 
-        // Check if already child: current = self.placeholder.get_first_child()
-        let current_child = self.placeholder.call_method0(py, "get_first_child")?;
+        // Always update history
+        calc_widget.call_method0(py, "update_history_display")?;
 
-        if current_child.is(&display) {
-            // calc_widget.update_history_display()
-            calc_widget.call_method0(py, "update_history_display")?;
+        // Check parent
+        let parent = display.call_method0(py, "get_parent")?;
+        
+        if parent.is(&self.placeholder) {
+            // Already in stack, just show it
+            self.placeholder.call_method1(py, "set_visible_child", (&display,))?;
             return Ok(());
         }
 
-        // Remove existing children
-        let mut child = self.placeholder.call_method0(py, "get_first_child")?;
-        while !child.is_none(py) {
-            let next_child = child.call_method0(py, "get_next_sibling")?;
-            self.placeholder.call_method1(py, "remove", (&child,))?;
-            child = next_child;
+        // If it has a different parent, remove it first? 
+        // GTK4 usually reparents automatically or warns. Safe to unparent.
+        if !parent.is_none(py) {
+             parent.call_method1(py, "remove", (&display,))?;
         }
 
-        // Unparent if needed
-        let parent = display.call_method0(py, "get_parent")?;
-        if !parent.is_none(py) && !parent.is(&self.placeholder) {
-            parent.call_method1(py, "remove", (&display,))?;
-        }
-
-        // Append
-        self.placeholder.call_method1(py, "append", (&display,))?;
+        // Add to stack and show
+        // Using "add_child" for GtkStack
+        self.placeholder.call_method1(py, "add_child", (&display,))?;
+        self.placeholder.call_method1(py, "set_visible_child", (&display,))?;
 
         Ok(())
     }

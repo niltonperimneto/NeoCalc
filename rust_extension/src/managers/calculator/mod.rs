@@ -122,16 +122,16 @@ impl CalculatorManager {
         self.display_manager.bind(py).call_method1("switch_display_for", (&calc_widget,))?;
 
         // connect entry changed
+        // connect expression changed listener
         let row_preview_label = row.bind(py).getattr("preview_label")?;
         
         let locals = PyDict::new(py);
         locals.set_item("preview_label", &row_preview_label)?;
-        // Use default argument to capture preview_label
-        let code = std::ffi::CString::new("lambda e, pl=preview_label: pl.set_text(e.get_text() or '0')").map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+        // Lambda now accepts 'text' directly
+        let code = std::ffi::CString::new("lambda text, pl=preview_label: pl.set_text(text or '0')").map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
         let lambda = py.eval(&code, None, Some(&locals))?;
         
-        let entry = calc_widget.bind(py).getattr("entry")?;
-        entry.call_method("connect", ("changed", lambda), None)?;
+        calc_widget.bind(py).setattr("on_expression_changed", lambda)?;
 
         Ok(())
     }

@@ -1,0 +1,66 @@
+/* Gruvbox Dark Theme */
+
+window,
+.background {
+    background-color: #282828;
+    color: #ebdbb2;
+}
+
+headerbar {
+    background-color: #1d2021;
+    color: #ebdbb2;
+    border-bottom: 1px solid #3c3836;
+}
+
+/* Calculators Grid */
+.calc-grid-button {
+    background-color: #3c3836;
+    color: #ebdbb2;
+    border: 1px solid #504945;
+}
+
+.calc-grid-button:hover {
+    background-color: #504945;
+}
+
+.calc-grid-button:active {
+    background-color: #d79921;
+    color: #282828;
+}
+
+/* Unique accents */
+.calc-grid-button.accent {
+    background-color: #fabd2f;
+    /* Yellow */
+    color: #282828;
+}
+
+.calc-grid-button.accent:hover {
+    background-color: #fe8019;
+    /* Orange */
+}
+
+/* Display Area */
+.calculator-display-header {
+    background-color: #282828;
+    color: #ebdbb2;
+}
+
+.calc-entry-display {
+    color: #ebdbb2;
+}
+
+.calc-history {
+    color: #a89984;
+}
+
+/* Sidebar */
+.sidebar {
+    background-color: #1d2021;
+    border-right: 1px solid #3c3836;
+}
+
+.sidebar-list row:selected {
+    background-color: #fabd2f;
+    color: #282828;
+}

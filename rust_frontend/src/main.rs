@@ -1,6 +1,7 @@
 use pyo3::prelude::*;
 use pyo3::types::PyList;
 use std::env;
+use std::io::{self, Write};
 use neocalc_backend::neocalc_backend;
 
 // Using 'current_thread' because GTK demands the main thread like a diva.
@@ -8,6 +9,8 @@ use neocalc_backend::neocalc_backend;
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> PyResult<()> {
     // 1. Inject the Rust backend module into Python.
+    eprintln!("Rust: Starting initialization...");
+    io::stderr().flush().unwrap();
     // I read in the docs that this is how you do it. 
     // It feels dirty, like global variables.
     pyo3::append_to_inittab!(neocalc_backend);
@@ -38,7 +41,7 @@ async fn main() -> PyResult<()> {
         }
         
         if let Some(gui_path) = found_path {
-            path.insert(0, gui_path)?;
+            path.insert(0, gui_path.to_string_lossy())?;
         } else {
              eprintln!("Could not find python_gui directory!");
              path.insert(0, "python_gui")?;
@@ -77,7 +80,10 @@ async fn main() -> PyResult<()> {
         let file_exists = app_path.exists();
 
         // Add BOTH the gui directory and the root directory to be safe
-        path.insert(0, gui_dir.clone())?;
+        path.insert(0, gui_dir.to_string_lossy())?;
+        if let Some(parent) = gui_dir.parent() {
+            path.insert(0, parent.to_string_lossy())?;
+        }
 
         // 4. Import the application module.
         // We catch the error to add the computed path to the message for debugging.

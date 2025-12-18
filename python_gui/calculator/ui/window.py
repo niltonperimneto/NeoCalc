@@ -25,7 +25,7 @@ class Calculator(Adw.ApplicationWindow):
         self.setup_layout()
         
         # --- Managers (Rust Powered) ---
-        self.display_manager = DisplayManager(self._display_placeholder)
+        self.display_manager = DisplayManager(self.display_stack)
         self.calc_manager = CalculatorManager(self, self.tab_view, self.sidebar_view, self.display_manager)
         
         # Connect signals for Rust manager (it delegates back to its own methods)

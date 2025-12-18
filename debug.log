@@ -1,0 +1,133 @@
+Starting build...
+   Compiling neocalc_backend v1.0.0 (/home/niltonpneto/NeoCalc/rust_extension)
+   Compiling rust_frontend v1.0.0 (/home/niltonpneto/NeoCalc/rust_frontend)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.39s
+Build finished. Running...
+Rust: Starting initialization...
+Found python_gui at: "/home/niltonpneto/NeoCalc/python_gui"
+Python: Entering main()
+
+(neocalc:73656): Gtk-WARNING **: 00:31:31.674: Trying to measure GtkRevealer 0x559986d0ffd0 for width of 0, but it needs at least 126
+
+(neocalc:73656): Gtk-WARNING **: 00:31:31.674: Trying to measure GtkScrolledWindow 0x559986d60a40 for width of 0, but it needs at least 135
+
+(neocalc:73656): Gtk-WARNING **: 00:31:33.910: Trying to measure GtkRevealer 0x559986d0ffd0 for width of 0, but it needs at least 126
+
+(neocalc:73656): Gtk-WARNING **: 00:31:33.910: Trying to measure GtkScrolledWindow 0x559986d60a40 for width of 0, but it needs at least 135
+
+(neocalc:73656): Gtk-WARNING **: 00:31:34.593: Trying to measure GtkRevealer 0x559986d0ffd0 for width of 0, but it needs at least 126
+
+(neocalc:73656): Gtk-WARNING **: 00:31:34.593: Trying to measure GtkScrolledWindow 0x559986d60a40 for width of 0, but it needs at least 135
+
+(neocalc:73656): Gtk-WARNING **: 00:31:35.060: Trying to measure GtkRevealer 0x559986d0ffd0 for width of 0, but it needs at least 126
+
+(neocalc:73656): Gtk-WARNING **: 00:31:35.060: Trying to measure GtkScrolledWindow 0x559986d60a40 for width of 0, but it needs at least 135
+
+(neocalc:73656): Gtk-WARNING **: 00:31:35.543: Trying to measure GtkRevealer 0x559986d0ffd0 for width of 0, but it needs at least 126
+
+(neocalc:73656): Gtk-WARNING **: 00:31:35.543: Trying to measure GtkScrolledWindow 0x559986d60a40 for width of 0, but it needs at least 135
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.587: gtk_widget_size_allocate(): attempt to allocate AdwBin widget 0x559986d2a7c0 with width -2147483131 and height 500
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.587: Trying to measure GtkBox 0x559986e54e30 for width of 0, but it needs at least 89
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.587: Trying to measure GtkStack 0x559986e567d0 for width of 0, but it needs at least 89
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.587: gtk_widget_size_allocate(): attempt to allocate GtkBox box 0x559986ecc350 with width -16 and height 212
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.588: Trying to measure GtkRevealer 0x559986d0ffd0 for width of 0, but it needs at least 126
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.589: Trying to measure GtkScrolledWindow 0x559986d60a40 for width of 0, but it needs at least 135
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.589: gtk_widget_size_allocate(): attempt to allocate AdwBin widget 0x559986d2a7c0 with width -2147483131 and height 500
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.593: Trying to measure GtkRevealer 0x559986d0ffd0 for width of 0, but it needs at least 126
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.593: Trying to measure GtkScrolledWindow 0x559986d60a40 for width of 0, but it needs at least 135
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.593: gtk_widget_size_allocate(): attempt to allocate AdwBin widget 0x559986d2a7c0 with width -2147483131 and height 500
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.610: Trying to measure GtkRevealer 0x559986d0ffd0 for width of 0, but it needs at least 126
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.610: Trying to measure GtkScrolledWindow 0x559986d60a40 for width of 0, but it needs at least 135
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.610: gtk_widget_size_allocate(): attempt to allocate AdwBin widget 0x559986d2a7c0 with width -2147483131 and height 500
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.627: Trying to measure GtkRevealer 0x559986d0ffd0 for width of 0, but it needs at least 126
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.628: Trying to measure GtkScrolledWindow 0x559986d60a40 for width of 0, but it needs at least 135
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.628: gtk_widget_size_allocate(): attempt to allocate AdwBin widget 0x559986d2a7c0 with width -2147483131 and height 500
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.644: Trying to measure GtkRevealer 0x559986d0ffd0 for width of 0, but it needs at least 126
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.644: Trying to measure GtkScrolledWindow 0x559986d60a40 for width of 0, but it needs at least 135
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.644: gtk_widget_size_allocate(): attempt to allocate AdwBin widget 0x559986d2a7c0 with width -2147483131 and height 500
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.661: Trying to measure GtkRevealer 0x559986d0ffd0 for width of 0, but it needs at least 126
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.661: Trying to measure GtkScrolledWindow 0x559986d60a40 for width of 0, but it needs at least 135
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.661: gtk_widget_size_allocate(): attempt to allocate AdwBin widget 0x559986d2a7c0 with width -2147483131 and height 500
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.677: Trying to measure GtkRevealer 0x559986d0ffd0 for width of 0, but it needs at least 126
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.677: Trying to measure GtkScrolledWindow 0x559986d60a40 for width of 0, but it needs at least 135
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.677: gtk_widget_size_allocate(): attempt to allocate AdwBin widget 0x559986d2a7c0 with width -2147483131 and height 500
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.694: Trying to measure GtkRevealer 0x559986d0ffd0 for width of 0, but it needs at least 126
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.694: Trying to measure GtkScrolledWindow 0x559986d60a40 for width of 0, but it needs at least 135
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.694: gtk_widget_size_allocate(): attempt to allocate AdwBin widget 0x559986d2a7c0 with width -2147483131 and height 500
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.710: Trying to measure GtkRevealer 0x559986d0ffd0 for width of 0, but it needs at least 126
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.710: Trying to measure GtkScrolledWindow 0x559986d60a40 for width of 0, but it needs at least 135
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.710: gtk_widget_size_allocate(): attempt to allocate AdwBin widget 0x559986d2a7c0 with width -2147483131 and height 500
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.727: Trying to measure GtkRevealer 0x559986d0ffd0 for width of 0, but it needs at least 126
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.727: Trying to measure GtkScrolledWindow 0x559986d60a40 for width of 0, but it needs at least 135
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.727: gtk_widget_size_allocate(): attempt to allocate AdwBin widget 0x559986d2a7c0 with width -2147483131 and height 500
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.744: Trying to measure GtkRevealer 0x559986d0ffd0 for width of 0, but it needs at least 126
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.744: Trying to measure GtkScrolledWindow 0x559986d60a40 for width of 0, but it needs at least 135
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.744: gtk_widget_size_allocate(): attempt to allocate AdwBin widget 0x559986d2a7c0 with width -2147483131 and height 500
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.760: Trying to measure GtkRevealer 0x559986d0ffd0 for width of 0, but it needs at least 126
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.760: Trying to measure GtkScrolledWindow 0x559986d60a40 for width of 0, but it needs at least 135
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.760: gtk_widget_size_allocate(): attempt to allocate AdwBin widget 0x559986d2a7c0 with width -2147483131 and height 500
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.777: Trying to measure GtkRevealer 0x559986d0ffd0 for width of 0, but it needs at least 126
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.777: Trying to measure GtkScrolledWindow 0x559986d60a40 for width of 0, but it needs at least 135
+
+(neocalc:73656): Gtk-WARNING **: 00:31:36.777: gtk_widget_size_allocate(): attempt to allocate AdwBin widget 0x559986d2a7c0 with width -2147483131 and height 500
+
+(neocalc:73656): Gtk-WARNING **: 00:31:40.321: Child name 'calc_2' not found in GtkStack
+
+(neocalc:73656): Gtk-WARNING **: 00:31:44.776: Child name 'calc_1' not found in GtkStack
+
+(neocalc:73656): Gtk-WARNING **: 00:31:56.741: Child name 'calc_2' not found in GtkStack
+
+(neocalc:73656): Gtk-WARNING **: 00:31:57.410: Child name 'calc_3' not found in GtkStack
+
+(neocalc:73656): Gtk-WARNING **: 00:31:57.830: Child name 'calc_4' not found in GtkStack
+
+(neocalc:73656): Gtk-WARNING **: 00:31:58.028: Child name 'calc_5' not found in GtkStack
+
+(neocalc:73656): Gtk-WARNING **: 00:31:59.290: Child name 'calc_4' not found in GtkStack
+
+(neocalc:73656): Gtk-WARNING **: 00:31:59.935: Child name 'calc_3' not found in GtkStack
+
+(neocalc:73656): Gtk-WARNING **: 00:32:01.012: Child name 'calc_1' not found in GtkStack
+Finished.
