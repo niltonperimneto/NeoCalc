@@ -1,16 +1,23 @@
 /* Catppuccin Mocha Theme */
 
-window,
-.background {
-    background-color: #1e1e2e;
-    color: #cdd6f4;
-}
+@define-color window_bg_color #1e1e2e;
+@define-color window_fg_color #cdd6f4;
 
-headerbar {
-    background-color: #181825;
-    color: #cdd6f4;
-    border-bottom: 1px solid #313244;
-}
+@define-color headerbar_bg_color #181825;
+@define-color headerbar_fg_color #cdd6f4;
+@define-color headerbar_border_color #313244;
+@define-color headerbar_backdrop_color @window_bg_color;
+@define-color headerbar_shade_color rgba(0, 0, 0, 0.36);
+
+@define-color popover_bg_color #1e1e2e;
+@define-color popover_fg_color #cdd6f4;
+
+@define-color view_bg_color #1e1e2e;
+@define-color view_fg_color #cdd6f4;
+
+@define-color card_bg_color #313244;
+@define-color card_fg_color #cdd6f4;
+@define-color card_shade_color rgba(0, 0, 0, 0.36);
 
 /* Calculators Grid */
 .calc-grid-button {
