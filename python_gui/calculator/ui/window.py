@@ -10,6 +10,7 @@ from ..styling import StyleManager
 from ..actions import ActionRegistry
 from .sidebar import SidebarView
 from .header import HeaderView
+from ..backend import DisplayManager, CalculatorManager
 
 class Calculator(Adw.ApplicationWindow):
     def __init__(self, app):
@@ -23,13 +24,17 @@ class Calculator(Adw.ApplicationWindow):
         self.action_registry = ActionRegistry(self)
         self.setup_layout()
         
+        # --- Managers (Rust Powered) ---
+        self.display_manager = DisplayManager(self._display_placeholder)
+        self.calc_manager = CalculatorManager(self, self.tab_view, self.sidebar_view, self.display_manager)
+        
+        # Connect signals for Rust manager (it delegates back to its own methods)
+        self.calc_manager.setup_signals(self.calc_manager)
         # --- Shortcuts Controller (Override) ---
         self.setup_keyboard_controller()
         
         # --- Initialization ---
-        self.instance_count = 0
-        self.calculator_widgets = []
-        self.add_calculator_instance()
+        self.calc_manager.add_calculator_instance()
         
         # --- Styling ---
         StyleManager.load_css()
@@ -44,8 +49,7 @@ class Calculator(Adw.ApplicationWindow):
         self.sidebar_view = SidebarView(self)
         self.split_view.set_sidebar(self.sidebar_view)
         
-        # 2. Sidebar List Reference (for access if needed, though view handles it)
-        # We might need direct access for row traversing in 'on_close_current_clicked'
+        # 2. Sidebar List Reference
         self.sidebar_list = self.sidebar_view.sidebar_list
 
         # 3. Content Area
@@ -83,6 +87,21 @@ class Calculator(Adw.ApplicationWindow):
         nav_page = Adw.NavigationPage(child=content_box, title="Calculator")
         self.split_view.set_content(nav_page)
 
+    def on_toggle_sidebar(self, button):
+        current_state = self.split_view.get_show_sidebar()
+        new_state = not current_state
+        
+        if new_state:
+            # Force window to expand by setting minimum size
+            self.set_size_request(600, 500)
+            GLib.timeout_add(150, self._show_sidebar_after_resize)
+        else:
+            self.split_view.set_show_sidebar(False)
+            GLib.timeout_add(100, lambda: self.set_default_size(320, 500) or False)
+
+    def _show_sidebar_after_resize(self):
+        self.split_view.set_show_sidebar(True)
+        self.set_size_request(320, 400)
     # switch_display_for is REMOVED
     pass
 
@@ -99,55 +118,21 @@ class Calculator(Adw.ApplicationWindow):
     def _show_sidebar_after_resize(self):
         # Deprecated logic removed
         return False
-
+        
+    # --- Delegation to Managers (for compatibility/signaling) ---
     def add_calculator_instance(self):
-        self.instance_count += 1
-        title = f"Calculator {self.instance_count}"
+        self.calc_manager.add_calculator_instance()
         
-        # Create Widget
-        calc_widget = CalculatorWidget()
-        calc_widget.parent_window = self
-        name = f"calc_{self.instance_count}"
+    def on_sidebar_row_selected(self, box, row):
+        self.calc_manager.on_sidebar_row_selected(box, row)
         
-        # Add to tab view
-        page = self.tab_view.add_page(calc_widget)
-        page.set_title(title)
-        page.set_indicator_icon(None)
+    def update_calculator_name(self, calc_widget):
+        self.calc_manager.update_calculator_name(calc_widget)
         
-        # Store metadata
-        page.calc_name = name
-        page.calc_widget = calc_widget
-        page.calc_number = self.instance_count
-        
-        self.tab_view.set_selected_page(page)
-        
-        # Add to sidebar list via SidebarView helper (or manual construction if complex)
-        row = Gtk.ListBoxRow()
-        row_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        row_box.set_margin_start(4)
-        row_box.set_margin_end(4)
-        row_box.set_margin_top(4)
-        row_box.set_margin_bottom(4)
-        
-        # Row Header (Title + Close Button)
-        header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-        
-        title_label = Gtk.Label(label=title)
-        title_label.set_xalign(0)
-        title_label.set_hexpand(True)
-        title_label.add_css_class("heading")
-        header_box.append(title_label)
-        
-        close_btn = Gtk.Button(icon_name="window-close-symbolic")
-        close_btn.add_css_class("flat")
-        close_btn.add_css_class("circular")
-        close_btn.set_tooltip_text("Close Calculation")
-        # Prevent row selection when clicking close
-        close_btn.connect("clicked", lambda b: self.on_close_calculator_from_sidebar(calc_widget))
-        header_box.append(close_btn)
-        
-        row_box.append(header_box)
-        
+    def switch_display_for(self, calc_widget):
+        self.display_manager.switch_display_for(calc_widget)
+
+    # --- Actions delegated from ActionRegistry ---
         preview_label = Gtk.Label(label="0")
         preview_label.set_xalign(1)
         preview_label.add_css_class("calc-preview")
@@ -226,6 +211,23 @@ class Calculator(Adw.ApplicationWindow):
                     calc_widget.get_stack().set_visible_child_name('standard')
                 elif idx == 1:
                     calc_widget.get_stack().set_visible_child_name('scientific')
+
+    def on_switch_scientific(self, action, param):
+        self.header_view.set_selected_type(1)
+
+    def on_switch_standard(self, action, param):
+        self.header_view.set_selected_type(0)
+
+    def on_switch_calculator(self, action, param, calc_number):
+        if calc_number <= self.tab_view.get_n_pages():
+            page = self.tab_view.get_nth_page(calc_number - 1)
+            if page:
+                self.tab_view.set_selected_page(page)
+                if hasattr(page, 'calc_widget'):
+                    self.display_manager.switch_display_for(page.calc_widget)
+
+    # End of Calculator class
+
 
     def on_tab_page_changed(self, tab_view, param):
         page = tab_view.get_selected_page()

@@ -14,6 +14,7 @@ class CalculatorWidget(Gtk.Box):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=0, **kwargs)
         
         self.parent_window = None  # Will be set by window when adding instance
+        self.logic = CalculatorLogic() # Instance-specific logic
         self.logic = CalculatorLogic() # Instance-specific logic/backend
         self.expression_state = "0"
 

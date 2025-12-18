@@ -113,7 +113,7 @@ jobs:
           mkdir -p dist/NeoCalc
           cp target/release/rust_frontend.exe dist/NeoCalc/NeoCalc.exe
           cp -r python_gui dist/NeoCalc/
-          
+          # Copy essential DLLs from UCRT64 environment
           cp /ucrt64/bin/libpython3*.dll dist/NeoCalc/
           cp /ucrt64/bin/libgtk-4-1.dll dist/NeoCalc/
           cp /ucrt64/bin/libadwaita-1-0.dll dist/NeoCalc/
@@ -129,6 +129,12 @@ jobs:
           cp /ucrt64/bin/libgcc_s_seh-1.dll dist/NeoCalc/
           cp /ucrt64/bin/libwinpthread-1.dll dist/NeoCalc/
           
+          # Copy Python Standard Library (fixes module errors)
+          # UCRT64 Environment puts it in /ucrt64/lib/python3.X
+          mkdir -p dist/NeoCalc/lib
+          cp -r /ucrt64/lib/python3.* dist/NeoCalc/lib/
+          
+          echo "DLLs copied."
           mkdir -p dist/NeoCalc/lib
           cp -r /ucrt64/lib/python3.* dist/NeoCalc/lib/
           

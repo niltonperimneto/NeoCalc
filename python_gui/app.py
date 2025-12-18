@@ -24,10 +24,12 @@ class CalculatorApp(Adw.Application):
         Calculator(self).present()
 
 def main():
+    import sys
     # Ensure argv is valid for GApplication
     argv = sys.argv
     if not argv or not argv[0]:
         argv = ["neocalc"]
+        
     
     CalculatorApp().run(argv)
 

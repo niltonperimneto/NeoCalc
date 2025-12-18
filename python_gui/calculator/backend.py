@@ -1,12 +1,17 @@
 import neocalc_backend
+from neocalc_backend import DisplayManager, CalculatorManager
 import asyncio
 
 class CalculatorLogic:
     """
     Python wrapper for the Rust backend.
-    I'm staying here in Python where the types are made up and the lifetimes don't matter.
+    Now instance-based so everyone gets their own sandbox.
     """
     
+    def __init__(self):
+        self._calc = neocalc_backend.Calculator()
+
+    def append_text(self, current_text: str, new_text: str) -> str:
     
     def __init__(self):
         # Create a fresh Rust backend instance for this logic controller
@@ -19,7 +24,6 @@ class CalculatorLogic:
         if current_text == "Error":
             current_text = ""
         
-        # Convert mathematical symbols to operators/constants
         symbol_map = {
             "÷": "/",
             "×": "*",
@@ -37,7 +41,6 @@ class CalculatorLogic:
         if current_text == "Error":
             current_text = ""
             
-        # Map function symbols if needed
         func_map = {
             "√": "sqrt"
         }
@@ -46,6 +49,20 @@ class CalculatorLogic:
         return current_text + effective_name + "("
 
     def clear(self) -> str:
+        return ""
+
+    def evaluate(self, current_text: str) -> str:
+        return self._calc.evaluate(current_text)
+
+    async def evaluate_async(self, current_text: str) -> str:
+        return await self._calc.evaluate_async(current_text)
+    
+    def get_history(self) -> list:
+        return self._calc.get_history()
+    
+    def clear_history(self) -> None:
+        self._calc.clear_history()
+
         # Just return an empty string. No allocations... wait, everything is an allocation in Python.
         return ""
 
