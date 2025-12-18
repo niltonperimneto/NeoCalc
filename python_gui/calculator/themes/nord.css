@@ -1,0 +1,73 @@
+/* Nord Dark Theme */
+
+@define-color window_bg_color #2e3440;
+@define-color window_fg_color #d8dee9;
+
+@define-color headerbar_bg_color #3b4252;
+@define-color headerbar_fg_color #d8dee9;
+@define-color headerbar_border_color #4c566a;
+@define-color headerbar_backdrop_color @window_bg_color;
+@define-color headerbar_shade_color rgba(0, 0, 0, 0.2);
+
+@define-color popover_bg_color #2e3440;
+@define-color popover_fg_color #d8dee9;
+
+@define-color view_bg_color #2e3440;
+@define-color view_fg_color #d8dee9;
+
+@define-color card_bg_color #3b4252;
+@define-color card_fg_color #d8dee9;
+@define-color card_shade_color rgba(0, 0, 0, 0.2);
+
+/* Calculators Grid */
+.calc-grid-button {
+    background-color: #3b4252;
+    color: #d8dee9;
+    border: 1px solid #434c5e;
+}
+
+.calc-grid-button:hover {
+    background-color: #434c5e;
+}
+
+.calc-grid-button:active {
+    background-color: #88c0d0;
+    color: #2e3440;
+}
+
+/* Unique accents */
+.calc-grid-button.accent {
+    background-color: #88c0d0;
+    /* Frost Blue */
+    color: #2e3440;
+}
+
+.calc-grid-button.accent:hover {
+    background-color: #81a1c1;
+    /* Darker Blue */
+}
+
+/* Display Area */
+.calculator-display-header {
+    background-color: #2e3440;
+    color: #d8dee9;
+}
+
+.calc-entry-display {
+    color: #eceff4;
+}
+
+.calc-history {
+    color: #4c566a;
+}
+
+/* Sidebar */
+.sidebar {
+    background-color: #3b4252;
+    border-right: 1px solid #4c566a;
+}
+
+.sidebar-list row:selected {
+    background-color: #88c0d0;
+    color: #2e3440;
+}
