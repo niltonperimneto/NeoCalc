@@ -21,30 +21,27 @@ impl DisplayManager {
         // Get display widget: display = calc_widget.get_display_widget()
         let display = calc_widget.call_method0(py, "get_display_widget")?;
 
-        // Check if display is already a child of placeholder
+        // Always update history
+        calc_widget.call_method0(py, "update_history_display")?;
+
+        // Check parent
         let parent = display.call_method0(py, "get_parent")?;
         
-        let needs_add = if parent.is_none(py) {
-            true
-        } else {
-            !parent.is(&self.placeholder)
-        };
-
-        if needs_add {
-             if !parent.is_none(py) {
-                 parent.call_method1(py, "remove", (&display,))?;
-             }
-             
-             // Try to get name from calc_widget
-             if calc_widget.bind(py).hasattr("calc_name")? {
-                 let name: String = calc_widget.getattr(py, "calc_name")?.extract(py)?;
-                 self.placeholder.call_method1(py, "add_named", (&display, &name))?;
-             } else {
-                 self.placeholder.call_method1(py, "add_child", (&display,))?;
-             }
+        if parent.is(&self.placeholder) {
+            // Already in stack, just show it
+            self.placeholder.call_method1(py, "set_visible_child", (&display,))?;
+            return Ok(());
         }
 
-        // For Gtk.Stack, we just switch the visible child
+        // If it has a different parent, remove it first? 
+        // GTK4 usually reparents automatically or warns. Safe to unparent.
+        if !parent.is_none(py) {
+             parent.call_method1(py, "remove", (&display,))?;
+        }
+
+        // Add to stack and show
+        // Using "add_child" for GtkStack
+        self.placeholder.call_method1(py, "add_child", (&display,))?;
         self.placeholder.call_method1(py, "set_visible_child", (&display,))?;
 
         Ok(())

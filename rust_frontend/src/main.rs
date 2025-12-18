@@ -21,7 +21,29 @@ async fn main() -> PyResult<()> {
         // getattr("path")?.extract()?; -> The '?' operator is carrying this entire codebase.
         let path: Bound<PyList> = sys.getattr("path")?.extract()?;
 
-    // 3. Find 'python_gui' directory.
+        // 3. Add 'python_gui' directory to sys.path.
+        let current_dir = env::current_dir()?;
+        let search_paths = vec![
+            current_dir.join("python_gui"),
+            current_dir.parent().unwrap_or(&current_dir).join("python_gui"),
+            current_dir.parent().unwrap_or(&current_dir).parent().unwrap_or(&current_dir).join("python_gui"),
+        ];
+        
+        let mut found_path = None;
+        for path in search_paths {
+            if path.exists() {
+                found_path = Some(path);
+                break;
+            }
+        }
+        
+        if let Some(gui_path) = found_path {
+            path.insert(0, gui_path.to_string_lossy())?;
+        } else {
+             eprintln!("Could not find python_gui directory!");
+             path.insert(0, "python_gui")?;
+        }
+        // 3. Find 'python_gui' directory.
         // We look in current directory and parents to support running from 'target/debug'
         let exe_path = env::current_exe()?;
         let exe_dir = exe_path.parent().ok_or_else(|| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>("Failed to get exe directory"))?;
@@ -55,11 +77,9 @@ async fn main() -> PyResult<()> {
         let file_exists = app_path.exists();
 
         // Add BOTH the gui directory and the root directory to be safe
-        // IMPORTANT: Must convert to string for sys.path!
-        if let Some(path_str) = gui_dir.to_str() {
-             path.insert(0, path_str)?;
-        } else {
-             eprintln!("Failed to convert gui_dir to string");
+        path.insert(0, gui_dir.to_string_lossy())?;
+        if let Some(parent) = gui_dir.parent() {
+            path.insert(0, parent.to_string_lossy())?;
         }
 
         // 4. Import the application module.

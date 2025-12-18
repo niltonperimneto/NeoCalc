@@ -2,6 +2,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Gtk, Adw, Gio, GObject
+from ..styling import StyleManager
 
 class CalcType(GObject.GObject):
     def __init__(self, label, icon):
@@ -70,7 +71,24 @@ class HeaderView(Adw.Bin):
         
     def setup_menu(self):
         menu_model = Gio.Menu()
-        menu_model.append("Toggle theme", "win.toggle_dark")
+        
+        # Themes Submenu
+        themes_menu = Gio.Menu()
+        
+        # Default Theme
+        themes_menu.append("Default", "win.set_theme('default')")
+        
+        # Dynamic Themes
+        for theme_name in StyleManager.get_available_themes():
+            # Capitalize first letter for display
+            display_name = theme_name.replace("_", " ").title()
+            themes_menu.append(display_name, f"win.set_theme('{theme_name}')")
+            
+        themes_menu.append("Import Theme...", "win.import_theme")
+        
+        menu_model.append_submenu("Themes", themes_menu)
+        
+        # Other items
         menu_model.append("Keyboard Shortcuts", "win.show_shortcuts")
         menu_model.append("About", "win.about")
         
