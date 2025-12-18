@@ -1,7 +1,13 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use pyo3::exceptions::PyRuntimeError;
+use std::sync::{Mutex, MutexGuard};
 use super::constants::*;
+
+/// Helper to lock a mutex and map poison errors to PyRuntimeError
+pub fn lock_mutex<T>(mutex: &Mutex<T>) -> PyResult<MutexGuard<'_, T>> {
+    mutex.lock().map_err(|e| PyRuntimeError::new_err(format!("Lock poisoned: {}", e)))
+}
 
 pub fn create_calculator_widget(py: Python<'_>, parent_window: &Py<PyAny>) -> PyResult<Py<PyAny>> {
     let view_mod = py.import("python_gui.calculator.view")?;
@@ -104,7 +110,7 @@ pub fn renumber_instances(py: Python<'_>, tab_view: &Py<PyAny>, sidebar_view: &P
         let title = if let Some(last) = history.last() {
             format_title(last)
         } else {
-            format!("Calculator {}", new_number)
+            format!("{} {}", gettextrs::gettext("Calculator"), new_number)
         };
         
         page.call_method1(py, METHOD_SET_TITLE, (&title,))?;

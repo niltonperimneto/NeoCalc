@@ -1,3 +1,23 @@
+/* Nord Dark Theme */
+
+@define-color window_bg_color #2e3440;
+@define-color window_fg_color #d8dee9;
+
+@define-color headerbar_bg_color #3b4252;
+@define-color headerbar_fg_color #d8dee9;
+@define-color headerbar_border_color #4c566a;
+@define-color headerbar_backdrop_color @window_bg_color;
+@define-color headerbar_shade_color rgba(0, 0, 0, 0.2);
+
+@define-color popover_bg_color #2e3440;
+@define-color popover_fg_color #d8dee9;
+
+@define-color view_bg_color #2e3440;
+@define-color view_fg_color #d8dee9;
+
+@define-color card_bg_color #3b4252;
+@define-color card_fg_color #d8dee9;
+@define-color card_shade_color rgba(0, 0, 0, 0.2);
 /* Nord Theme */
 window,
 .background {
@@ -36,11 +56,13 @@ headerbar {
 
 .calc-grid-button.accent:hover {
     background-color: #81a1c1;
+    /* Darker Blue */
 }
 
 /* Display Area */
 .calculator-display-header {
     background-color: #2e3440;
+    color: #d8dee9;
     color: #eceff4;
 }
 
@@ -49,11 +71,14 @@ headerbar {
 }
 
 .calc-history {
+    color: #4c566a;
     color: #e5e9f0;
 }
 
 /* Sidebar */
 .sidebar {
+    background-color: #3b4252;
+    border-right: 1px solid #4c566a;
     background-color: #2e3440;
     border-right: 1px solid #3b4252;
 }

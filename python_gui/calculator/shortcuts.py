@@ -61,6 +61,7 @@ def show_shortcuts_dialog(parent_window):
 </interface>
 """
     
+    builder.set_translation_domain("neocalc")
     builder.add_from_string(shortcuts_ui)
     shortcuts_window = builder.get_object("shortcuts_window")
     shortcuts_window.set_transient_for(parent_window)

@@ -1,41 +1,70 @@
 use pyo3::prelude::*;
 use pyo3::types::PyModule;
 use pyo3::Bound;
-use pyo3_async_runtimes::tokio;
-use std::sync::{Arc, Mutex};
+use pyo3::exceptions::PyRuntimeError;
+use pyo3_async_runtimes::tokio::future_into_py;
+use std::sync::{Arc, Mutex, MutexGuard};
 
 mod engine;
+mod managers;
 
 use num_complex::Complex64;
 
-/// The interface between Python (Dynamic Bliss) and Rust (Static Pain).
-#[pyclass]
-#[derive(Default)]
-struct Calculator {
-    // I had to use Arc<Mutex<>> because the borrow checker kept yelling at me.
-    // I just want to share a list, why is it so hard?
-    history: Arc<Mutex<Vec<String>>>,
-    input_buffer: Arc<Mutex<String>>,
+const EPSILON: f64 = 1e-10;
+
+/// Helper to lock a mutex and map poison errors to PyRuntimeError
+fn lock_mutex<T>(mutex: &Mutex<T>) -> PyResult<MutexGuard<'_, T>> {
+    mutex.lock().map_err(|e| PyRuntimeError::new_err(format!("Lock poisoned: {}", e)))
+}
+
+fn format_float(val: f64) -> String {
+    if val.fract().abs() < EPSILON {
+        (val.round() as i64).to_string()
+    } else {
+        val.to_string()
+    }
 }
 
 fn format_complex(c: Complex64) -> String {
     let re = c.re;
     let im = c.im;
-    let epsilon = 1e-10;
 
-    if im.abs() < epsilon {
-        if re.fract().abs() < epsilon { (re.round() as i64).to_string() } else { re.to_string() }
+    if im.abs() < EPSILON {
+        format_float(re)
     } else {
-        let re_str = if re.fract().abs() < epsilon { (re.round() as i64).to_string() } else { re.to_string() };
+        let re_str = format_float(re);
         let im_abs = im.abs();
-        let im_str = if im_abs.fract().abs() < epsilon { (im_abs.round() as i64).to_string() } else { im_abs.to_string() };
+        let im_str = format_float(im_abs);
         
-        if re.abs() < epsilon {
-             format!("{}i", if im < 0.0 { format!("-{}", im_str) } else { im_str })
+        if re.abs() < EPSILON {
+             if im < 0.0 { format!("-{}i", im_str) } else { format!("{}i", im_str) }
         } else {
              format!("{} {} {}i", re_str, if im < 0.0 { "-" } else { "+" }, im_str)
         }
     }
+}
+
+fn map_input_token(text: &str) -> &str {
+    match text {
+        "÷" => "/",
+        "×" => "*",
+        "−" => "-",
+        "π" => "pi",
+        "√" => "sqrt(", 
+        _ => text,
+    }
+}
+
+fn should_auto_paren(token: &str) -> bool {
+    matches!(token, "sin" | "cos" | "tan" | "asin" | "acos" | "atan" | "sinh" | "cosh" | "tanh" | "log" | "ln" | "sqrt" | "abs")
+}
+
+/// The interface between Python (Dynamic Bliss) and Rust (Static Pain).
+#[pyclass]
+#[derive(Default)]
+struct Calculator {
+    history: Arc<Mutex<Vec<String>>>,
+    input_buffer: Arc<Mutex<String>>,
 }
 
 #[pymethods]
@@ -43,107 +72,103 @@ impl Calculator {
     #[new]
     fn new() -> Self {
         Calculator {
-            // Arc::new(Mutex::new(...)) - I feel like I'm casting a spell.
             history: Arc::new(Mutex::new(Vec::new())),
             input_buffer: Arc::new(Mutex::new(String::from("0"))),
         }
     }
 
-    fn input(&self, text: String) -> String {
-        let mut buffer = self.input_buffer.lock().unwrap();
+    fn input(&self, text: String) -> PyResult<String> {
+        let mut buffer = lock_mutex(&self.input_buffer)?;
         
         if *buffer == "0" && text != "." && text != ")" {
             *buffer = text;
         } else {
-             // Basic mapping logic moved from Python
-             let mapped = match text.as_str() {
-                 "÷" => "/",
-                 "×" => "*",
-                 "−" => "-",
-                 "π" => "pi",
-                 "√" => "sqrt(", 
-                 _ => text.as_str(),
-             };
-             
+             let mapped = map_input_token(&text);
              buffer.push_str(mapped);
              
-             // Simple heuristic for functions without needing explicit type info
-             let funcs = ["sin", "cos", "tan", "asin", "acos", "atan", "sinh", "cosh", "tanh", "log", "ln", "sqrt", "abs"];
-             if funcs.contains(&mapped) {
+             if should_auto_paren(mapped) {
                  buffer.push('(');
              }
         }
-        buffer.clone()
+        Ok(buffer.clone())
     }
 
-    fn backspace(&self) -> String {
-        let mut buffer = self.input_buffer.lock().unwrap();
-        if buffer.len() > 0 {
+    fn backspace(&self) -> PyResult<String> {
+        let mut buffer = lock_mutex(&self.input_buffer)?;
+        if !buffer.is_empty() {
             buffer.pop();
             if buffer.is_empty() {
                 *buffer = "0".to_string();
             }
         }
-        buffer.clone()
+        Ok(buffer.clone())
     }
 
-    fn clear(&self) -> String {
-        let mut buffer = self.input_buffer.lock().unwrap();
+    fn clear(&self) -> PyResult<String> {
+        let mut buffer = lock_mutex(&self.input_buffer)?;
         *buffer = "0".to_string();
-        buffer.clone()
+        Ok(buffer.clone())
     }
 
-    fn get_buffer(&self) -> String {
-        self.input_buffer.lock().unwrap().clone()
+    fn get_buffer(&self) -> PyResult<String> {
+        Ok(lock_mutex(&self.input_buffer)?.clone())
     }
 
-    fn evaluate(&self, _expression: Option<String>) -> String {
-        // If expression provided (legacy/compat), use it. 
-        // Otherwise use buffer.
+    fn evaluate(&self, _expression: Option<String>) -> PyResult<String> {
         let expr_to_eval = if let Some(e) = _expression {
             e
         } else {
-            self.input_buffer.lock().unwrap().clone()
+            lock_mutex(&self.input_buffer)?.clone()
         };
 
-        // Calling my 'engine'. It's just a file I copied from StackOverflow (kidding... mostly).
         let res = engine::evaluate(&expr_to_eval);
         let output = match res {
             Ok(c) => format_complex(c),
-            Err(_) => "Error".to_string(), // Error handling is hard, let's just return a string.
+            Err(_) => "Error".to_string(),
         };
 
         if output != "Error" && !expr_to_eval.trim().is_empty() {
-            // lock()? unwrap()? I hope this doesn't panic.
             if let Ok(mut h) = self.history.lock() {
                 h.push(format!("{} = {}", expr_to_eval, output));
             }
-            // Update buffer with result if we used internal buffer
             if let Ok(mut b) = self.input_buffer.lock() {
                 *b = output.clone();
             }
         }
-        output
+        Ok(output)
+    }
+
+    fn set_expression(&self, expression: String) -> PyResult<()> {
+        let mut buffer = lock_mutex(&self.input_buffer)?;
+        *buffer = expression;
+        Ok(())
     }
 
     fn evaluate_async<'py>(&self, py: Python<'py>, expression: Option<String>) -> PyResult<Bound<'py, PyAny>> {
         let buffer_val = if let Some(e) = expression {
             e
         } else {
-            self.input_buffer.lock().unwrap().clone()
+            lock_mutex(&self.input_buffer)?.clone()
         };
         
         let history = self.history.clone();
         let buffer_arc = self.input_buffer.clone();
+        
+        // Clone for the blocking task
+        let expr_for_task = buffer_val.clone();
 
-        tokio::future_into_py(py, async move {
-            let res = engine::evaluate(&buffer_val);
-            let output = match res {
-                Ok(c) => format_complex(c),
-                Err(_) => "Error".to_string(),
-            };
+        future_into_py(py, async move {
+            let output = tokio::task::spawn_blocking(move || {
+                let res = engine::evaluate(&expr_for_task);
+                match res {
+                    Ok(c) => format_complex(c),
+                    Err(_) => "Error".to_string(),
+                }
+            }).await.map_err(|e| PyRuntimeError::new_err(format!("Join error: {}", e)))?;
 
             if output != "Error" && !buffer_val.trim().is_empty() {
+                // We use explicit matches or unwrap_or_else here to avoid extensive error handling inside async block
+                // keeping it simple as these locks shouldn't be poisoned easily in this content
                 if let Ok(mut h) = history.lock() {
                      h.push(format!("{} = {}", buffer_val, output));
                 }
@@ -155,18 +180,16 @@ impl Calculator {
         })
     }
 
-    fn get_history(&self) -> Vec<String> {
-        self.history.lock().unwrap().clone()
+    fn get_history(&self) -> PyResult<Vec<String>> {
+        Ok(lock_mutex(&self.history)?.clone())
     }
     
-    fn clear_history(&self) {
-        if let Ok(mut h) = self.history.lock() {
-            h.clear();
-        }
+    fn clear_history(&self) -> PyResult<()> {
+        let mut h = lock_mutex(&self.history)?;
+        h.clear();
+        Ok(())
     }
 }
-
-mod managers;
 
 #[pymodule]
 pub fn neocalc_backend(m: &Bound<PyModule>) -> PyResult<()> {

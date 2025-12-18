@@ -1,16 +1,23 @@
 /* Dracula Theme */
 
-window,
-.background {
-    background-color: #282a36;
-    color: #f8f8f2;
-}
+@define-color window_bg_color #282a36;
+@define-color window_fg_color #f8f8f2;
 
-headerbar {
-    background-color: #44475a;
-    color: #f8f8f2;
-    border-bottom: 1px solid #6272a4;
-}
+@define-color headerbar_bg_color #44475a;
+@define-color headerbar_fg_color #f8f8f2;
+@define-color headerbar_border_color #6272a4;
+@define-color headerbar_backdrop_color @window_bg_color;
+@define-color headerbar_shade_color rgba(0, 0, 0, 0.36);
+
+@define-color popover_bg_color #282a36;
+@define-color popover_fg_color #f8f8f2;
+
+@define-color view_bg_color #282a36;
+@define-color view_fg_color #f8f8f2;
+
+@define-color card_bg_color #44475a;
+@define-color card_fg_color #f8f8f2;
+@define-color card_shade_color rgba(0, 0, 0, 0.36);
 
 /* Calculators Grid */
 .calc-grid-button {

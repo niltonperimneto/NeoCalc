@@ -1,0 +1,80 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: NeoCalc 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-12-18 10:00-0300\n"
+"PO-Revision-Date: 2025-12-18 10:00-0300\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Could not find 'python_gui' directory. It's gone. Reduced to atoms."
+msgstr "No se pudo encontrar el directorio 'python_gui'. Se ha ido. Reducido a átomos."
+
+msgid "Standard"
+msgstr "Estándar"
+
+msgid "Scientific"
+msgstr "Científica"
+
+msgid "Themes"
+msgstr "Temas"
+
+msgid "Default"
+msgstr "Por defecto"
+
+msgid "Import Theme..."
+msgstr "Importar tema..."
+
+msgid "Keyboard Shortcuts"
+msgstr "Atajos de teclado"
+
+msgid "About"
+msgstr "Acerca de"
+
+msgid "Toggle Sidebar"
+msgstr "Alternar barra lateral"
+
+msgid "Calculator"
+msgstr "Calculadora"
+
+msgid "The calculator that judges you.\n(Forked & Broken for educational purposes)"
+msgstr "La calculadora que te juzga.\n(Forkeada y rota con fines educativos)"
+
+msgid "Original Code"
+msgstr "Código original"
+
+msgid "New Code (Rust)"
+msgstr "Nuevo código (Rust)"
+
+msgid "Purpose"
+msgstr "Propósito"
+
+msgid "To teach innocent kids Python"
+msgstr "Para enseñar Python a niños inocentes"
+
+msgid "To try to teach me Rust"
+msgstr "Para intentar enseñarme Rust"
+
+msgid "New Calculator"
+msgstr "Nueva calculadora"
+
+msgid "Toggle Dark Mode"
+msgstr "Alternar modo oscuro"
+
+msgid "Switch to Scientific Mode"
+msgstr "Cambiar a modo científico"
+
+msgid "Switch to Standard Mode"
+msgstr "Cambiar a modo estándar"
+
+msgid "Switch to Calculator 1-9"
+msgstr "Cambiar a calculadora 1-9"
+
+msgid "Show Keyboard Shortcuts"
+msgstr "Mostrar atajos de teclado"
+
+

@@ -11,6 +11,7 @@ class SidebarView(Adw.NavigationPage):
         super().__init__(title="Calculators")
         self.main_window = main_window
         self.set_size_request(280, -1)
+        self.add_css_class("sidebar")
         self.setup_ui()
         
     def setup_ui(self):

@@ -1,0 +1,74 @@
+/* Rosé Pine Dawn Theme */
+
+@define-color window_bg_color #faf4ed;
+@define-color window_fg_color #575279;
+
+@define-color headerbar_bg_color #fffaf3;
+@define-color headerbar_fg_color #575279;
+@define-color headerbar_border_color #f2e9e1;
+@define-color headerbar_backdrop_color @window_bg_color;
+@define-color headerbar_shade_color rgba(0, 0, 0, 0.02);
+
+@define-color popover_bg_color #faf4ed;
+@define-color popover_fg_color #575279;
+
+@define-color view_bg_color #faf4ed;
+@define-color view_fg_color #575279;
+
+@define-color card_bg_color #fffaf3;
+@define-color card_fg_color #575279;
+@define-color card_shade_color rgba(0, 0, 0, 0.02);
+
+/* Calculators Grid */
+.calc-grid-button {
+    background-color: #fffaf3;
+    color: #575279;
+    border: 1px solid #f2e9e1;
+}
+
+.calc-grid-button:hover {
+    background-color: #f2e9e1;
+}
+
+.calc-grid-button:active {
+    background-color: #907aa9;
+    color: #faf4ed;
+}
+
+/* Unique accents */
+.calc-grid-button.accent {
+    background-color: #d7827e;
+    /* Rose */
+    color: #faf4ed;
+}
+
+.calc-grid-button.accent:hover {
+    background-color: #286983;
+    /* Pine */
+    color: #faf4ed;
+}
+
+/* Display Area */
+.calculator-display-header {
+    background-color: #faf4ed;
+    color: #575279;
+}
+
+.calc-entry-display {
+    color: #575279;
+}
+
+.calc-history {
+    color: #9893a5;
+}
+
+/* Sidebar */
+.sidebar {
+    background-color: #fffaf3;
+    border-right: 1px solid #f2e9e1;
+}
+
+.sidebar-list row:selected {
+    background-color: #d7827e;
+    color: #faf4ed;
+}

@@ -1,0 +1,73 @@
+/* Catppuccin Frappé Theme */
+
+@define-color window_bg_color #303446;
+@define-color window_fg_color #c6d0f5;
+
+@define-color headerbar_bg_color #292c3c;
+@define-color headerbar_fg_color #c6d0f5;
+@define-color headerbar_border_color #414559;
+@define-color headerbar_backdrop_color @window_bg_color;
+@define-color headerbar_shade_color rgba(0, 0, 0, 0.2);
+
+@define-color popover_bg_color #303446;
+@define-color popover_fg_color #c6d0f5;
+
+@define-color view_bg_color #303446;
+@define-color view_fg_color #c6d0f5;
+
+@define-color card_bg_color #292c3c;
+@define-color card_fg_color #c6d0f5;
+@define-color card_shade_color rgba(0, 0, 0, 0.2);
+
+/* Calculators Grid */
+.calc-grid-button {
+    background-color: #414559;
+    color: #c6d0f5;
+    border: 1px solid #51576d;
+}
+
+.calc-grid-button:hover {
+    background-color: #51576d;
+}
+
+.calc-grid-button:active {
+    background-color: #ca9ee6;
+    color: #303446;
+}
+
+/* Unique accents */
+.calc-grid-button.accent {
+    background-color: #ca9ee6;
+    /* Mauve */
+    color: #303446;
+}
+
+.calc-grid-button.accent:hover {
+    background-color: #f4b8e4;
+    /* Pink */
+}
+
+/* Display Area */
+.calculator-display-header {
+    background-color: #303446;
+    color: #c6d0f5;
+}
+
+.calc-entry-display {
+    color: #c6d0f5;
+}
+
+.calc-history {
+    color: #949cbb;
+}
+
+/* Sidebar */
+.sidebar {
+    background-color: #292c3c;
+    border-right: 1px solid #414559;
+}
+
+.sidebar-list row:selected {
+    background-color: #ca9ee6;
+    color: #303446;
+}

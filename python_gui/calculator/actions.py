@@ -54,9 +54,9 @@ class ActionRegistry:
 
     def on_toggle_mode_action(self, action, param):
         if StyleManager.toggle_theme():
-            print("Switched to Dark Mode")
+            pass
         else:
-            print("Switched to Light Mode")
+            pass
             
         try:
             self.window.tab_view.disconnect_by_func(self.window.calc_manager.on_tab_page_changed)
@@ -82,9 +82,8 @@ class ActionRegistry:
 
     def on_import_theme(self, action, param):
         StyleManager.import_theme(self.window)
-        # TODO: Ideally we should refresh the menu here, but that requires more plumbing.
-        # For now, a restart might be required to see the new theme in the menu, 
-        # or we trigger a header update if possible.
+
+        # For now, a restart might be required to see the new theme in the menu.
 
     def on_set_theme(self, action, param):
         theme_name = param.get_string()

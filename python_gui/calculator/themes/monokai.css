@@ -1,0 +1,73 @@
+/* Monokai Theme */
+
+@define-color window_bg_color #272822;
+@define-color window_fg_color #f8f8f2;
+
+@define-color headerbar_bg_color #1e1f1c;
+@define-color headerbar_fg_color #f8f8f2;
+@define-color headerbar_border_color #3e3d32;
+@define-color headerbar_backdrop_color @window_bg_color;
+@define-color headerbar_shade_color rgba(0, 0, 0, 0.3);
+
+@define-color popover_bg_color #272822;
+@define-color popover_fg_color #f8f8f2;
+
+@define-color view_bg_color #272822;
+@define-color view_fg_color #f8f8f2;
+
+@define-color card_bg_color #1e1f1c;
+@define-color card_fg_color #f8f8f2;
+@define-color card_shade_color rgba(0, 0, 0, 0.3);
+
+/* Calculators Grid */
+.calc-grid-button {
+    background-color: #3e3d32;
+    color: #f8f8f2;
+    border: 1px solid #75715e;
+}
+
+.calc-grid-button:hover {
+    background-color: #75715e;
+}
+
+.calc-grid-button:active {
+    background-color: #a6e22e;
+    color: #272822;
+}
+
+/* Unique accents */
+.calc-grid-button.accent {
+    background-color: #f92672;
+    /* Pink */
+    color: #f8f8f2;
+}
+
+.calc-grid-button.accent:hover {
+    background-color: #fd971f;
+    /* Orange */
+}
+
+/* Display Area */
+.calculator-display-header {
+    background-color: #272822;
+    color: #f8f8f2;
+}
+
+.calc-entry-display {
+    color: #f8f8f2;
+}
+
+.calc-history {
+    color: #75715e;
+}
+
+/* Sidebar */
+.sidebar {
+    background-color: #1e1f1c;
+    border-right: 1px solid #3e3d32;
+}
+
+.sidebar-list row:selected {
+    background-color: #a6e22e;
+    color: #272822;
+}

@@ -60,3 +60,9 @@ class CalculatorLogic:
         Telling Rust to forget everything. 
         """
         self._calc.clear_history()
+
+    def set_expression(self, text: str) -> None:
+        """
+        Set buffer directly.
+        """
+        self._calc.set_expression(text)

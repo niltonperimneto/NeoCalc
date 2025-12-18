@@ -9,12 +9,13 @@ from .grid_standard import ButtonGrid
 from .backend import CalculatorLogic
 
 
+from .ui.display import CalculatorDisplay
+
 class CalculatorWidget(Gtk.Box):
     def __init__(self, **kwargs):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=0, **kwargs)
         
         self.parent_window = None  # Will be set by window when adding instance
-        self.logic = CalculatorLogic() # Instance-specific logic
         self.logic = CalculatorLogic() # Instance-specific logic
         
         # Initial display sync
@@ -25,36 +26,10 @@ class CalculatorWidget(Gtk.Box):
         key_controller.connect("key-pressed", self.on_key_pressed)
         self.add_controller(key_controller)
 
-        # History display label (shows previous calculations)
-        self.history_label = Gtk.Label()
-        self.history_label.set_xalign(1.0)
-        self.history_label.set_justify(Gtk.Justification.RIGHT)
-        self.history_label.set_wrap(True)
-        self.history_label.set_selectable(True)
-        self.history_label.add_css_class("calc-history")
-        self.history_label.set_text("")  # Initially empty
-
-        # Header display label (multiline capable)
-        self.display_label = Gtk.Label()
-        self.display_label.set_xalign(1.0)
-        self.display_label.set_justify(Gtk.Justification.RIGHT)
-        self.display_label.set_wrap(True)
-        self.display_label.add_css_class("calc-entry-display")
-        self.display_label.set_text("0")
-
-        # Create the display box once
-        self.display_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        
-        # Scrolled window for history
-        history_scroll = Gtk.ScrolledWindow()
-        history_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        history_scroll.set_max_content_height(150)
-        history_scroll.set_propagate_natural_height(True)
-        history_scroll.set_child(self.history_label)
-        history_scroll.add_css_class("calc-history-scroll")
-        
-        self.display_box.append(history_scroll)
-        self.display_box.append(self.display_label)
+        # Display Component
+        self.display = CalculatorDisplay()
+        self.display.connect('user-edited', self.on_display_edited)
+        self.display.connect('activated', self.on_display_activated)
 
         # Main content area with grids
         main_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
@@ -87,6 +62,10 @@ class CalculatorWidget(Gtk.Box):
         )
 
         grid_box.append(self.view_stack)
+        
+        grid_box.append(self.view_stack)
+        
+        # Append Content only (Display is handled by DisplayManager/Window)
         self.append(main_content)
         self.set_vexpand(True)
 
@@ -100,19 +79,14 @@ class CalculatorWidget(Gtk.Box):
         return self.view_stack
 
     def get_display_widget(self):
-        """Return the widget suitable for placing in the header title area."""
+        """Return the display widget to be placed in the header/stack."""
         self.update_history_display()
-        return self.display_box
+        return self.display
     
     def update_history_display(self):
         """Update the history label with recent calculations."""
         history = self.logic.get_history()
-        if history:
-            # Show last 5 entries
-            recent_history = history[-5:]
-            self.history_label.set_text("\n".join(recent_history))
-        else:
-            self.history_label.set_text("")
+        self.display.set_history(history)
     
     def trigger_name_update(self):
         """Trigger parent window to update calculator name"""
@@ -121,54 +95,63 @@ class CalculatorWidget(Gtk.Box):
 
     # --- input interface for Grids ---
     def get_expression(self):
-        # Delegate to logic
         return self.logic.get_buffer()
 
     def set_expression(self, text):
-        # Legacy hook, ideally we call logic directly.
-        # But if grids call this with a string, we might desync if we don't handle it carefully.
-        # Actually grids assume they are managing state via set_expression(result).
-        # We should update grids too.
-        # For now, if this is called with a result (from evaluate), we update display.
-        # But if it's called with "text" from append... 
-        # Refactor: this method just updates display.
-        self.display_label.set_text(text)
+        """Called when logic updates (e.g. from buttons)"""
+        self.display.set_value(text)
         if self.on_expression_changed:
             self.on_expression_changed(text)
 
+    def insert_at_cursor(self, text):
+        self.display.insert_at_cursor(text)
+
+    def backspace_at_cursor(self):
+        self.display.backspace_at_cursor()
+
     def update_display(self):
+        # Pull from logic and update UI
         text = self.logic.get_buffer()
-        self.display_label.set_text(text)
+        self.display.set_value(text)
         if self.on_expression_changed:
             self.on_expression_changed(text)
+
+    def on_display_edited(self, widget, text):
+        self.logic.set_expression(text)
+        if self.on_expression_changed:
+            self.on_expression_changed(text)
+
+    def on_display_activated(self, widget):
+        self.logic.evaluate()
+        self.update_display()
+        self.update_history_display()
+        self.trigger_name_update()
 
     # --- input handling ---
     def on_key_pressed(self, controller, keyval, keycode, state):
-        # Handle digits and operators directly
-        from gi.repository import Gdk, GLib
+        # if entry has focus, let it handle the key
+        if self.display.has_focus():
+            return False 
+
+        # Handle digits and operators directly (when entry doesn't have focus)
+        from gi.repository import Gdk
         
         # Determine character
         key_char = Gdk.keyval_to_unicode(keyval)
         valid_chars = "0123456789.+-*/^%()"
         
         if key_char and chr(key_char) in valid_chars:
-            self.logic.input(chr(key_char))
-            self.update_display()
+            self.insert_at_cursor(chr(key_char))
             return True
             
         name = Gdk.keyval_name(keyval)
         
         if name == "BackSpace":
-             self.logic.backspace()
-             self.update_display()
+             self.backspace_at_cursor()
              return True
 
         elif name in ("Return", "KP_Enter"):
-            # Evaluate
-            self.logic.evaluate() # No arg uses buffer
-            self.update_display() 
-            self.update_history_display()
-            self.trigger_name_update()
+            self.on_display_activated(None)
             return True
         
         elif name == "Escape":

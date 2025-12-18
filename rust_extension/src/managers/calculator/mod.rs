@@ -5,7 +5,9 @@ pub mod helpers;
 use pyo3::prelude::*;
 use std::sync::{Arc, Mutex};
 use pyo3::exceptions::PyRuntimeError;
+
 use constants::*;
+use gettextrs::gettext;
 
 /// Manages calculator instances, sidebar rows, and tab pages.
 #[pyclass]
@@ -18,6 +20,9 @@ pub struct CalculatorManager {
     // State
     instance_count: Arc<Mutex<i32>>,
     calculator_widgets: Arc<Mutex<Vec<Py<PyAny>>>>,
+
+    // Async runtime helper
+    _rt: tokio::runtime::Runtime,
 }
 
 #[pymethods]
@@ -36,6 +41,7 @@ impl CalculatorManager {
             display_manager,
             instance_count: Arc::new(Mutex::new(0)),
             calculator_widgets: Arc::new(Mutex::new(Vec::new())),
+            _rt: rt,
         })
     }
 
@@ -57,11 +63,11 @@ impl CalculatorManager {
         let new_count = n_pages + 1;
         
         {
-            let mut count = self.instance_count.lock().map_err(|e| PyRuntimeError::new_err(format!("Lock poisoned: {}", e)))?;
+            let mut count = helpers::lock_mutex(&self.instance_count)?;
             *count = new_count;
         }
 
-        let title = format!("Calculator {}", new_count);
+        let title = format!("{} {}", gettext("Calculator"), new_count);
         let name = format!("calc_{}", new_count);
 
         // 1. Create Python Widget
@@ -76,7 +82,7 @@ impl CalculatorManager {
         
         // 4. Update internal tracking
         {
-            let mut widgets = self.calculator_widgets.lock().map_err(|e| PyRuntimeError::new_err(format!("Lock poisoned: {}", e)))?;
+            let mut widgets = helpers::lock_mutex(&self.calculator_widgets)?;
             widgets.push(calc_widget.clone_ref(py));
         }
 
@@ -116,7 +122,7 @@ impl CalculatorManager {
 
         // Remove from widgets list
         {
-            let mut widgets = self.calculator_widgets.lock().map_err(|e| PyRuntimeError::new_err(format!("Lock poisoned: {}", e)))?;
+            let mut widgets = helpers::lock_mutex(&self.calculator_widgets)?;
             if let Some(pos) = widgets.iter().position(|x| x.is(&calc_widget)) {
                 widgets.remove(pos);
             }
@@ -135,7 +141,7 @@ impl CalculatorManager {
              self.add_calculator_instance(py)?;
         }
         
-        let mut count = self.instance_count.lock().map_err(|e| PyRuntimeError::new_err(format!("Lock poisoned: {}", e)))?;
+        let mut count = helpers::lock_mutex(&self.instance_count)?;
         *count = if n_pages == 0 { 1 } else { n_pages };
 
         Ok(())
@@ -148,14 +154,16 @@ impl CalculatorManager {
         if history.is_empty() { return Ok(()); }
 
         if let Some((_, page)) = helpers::find_page_by_widget(py, &self.tab_view, &calc_widget)? {
-            let last = history.last().unwrap();
-            let title = helpers::format_title(last);
-            page.call_method1(py, METHOD_SET_TITLE, (&title,))?;
-            
-            if let Some(row) = helpers::find_sidebar_row_by_widget(py, &self.sidebar_view, &calc_widget)? {
-                if row.bind(py).hasattr(ATTR_TITLE_LABEL)? {
-                     let tl = row.getattr(py, ATTR_TITLE_LABEL)?;
-                     tl.call_method1(py, METHOD_SET_LABEL, (&title,))?;
+            // SAFE UNWRAP Replacement
+            if let Some(last) = history.last() {
+                let title = helpers::format_title(last);
+                page.call_method1(py, METHOD_SET_TITLE, (&title,))?;
+                
+                if let Some(row) = helpers::find_sidebar_row_by_widget(py, &self.sidebar_view, &calc_widget)? {
+                    if row.bind(py).hasattr(ATTR_TITLE_LABEL)? {
+                         let tl = row.getattr(py, ATTR_TITLE_LABEL)?;
+                         tl.call_method1(py, METHOD_SET_LABEL, (&title,))?;
+                    }
                 }
             }
         }

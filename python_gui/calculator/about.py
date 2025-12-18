@@ -10,7 +10,7 @@ def present_about_dialog(parent):
     dialog.set_version("1.0")
     dialog.set_developer_name("Nilton Perim Neto")
     dialog.set_license_type(Gtk.License.GPL_3_0)
-    dialog.set_comments("The calculator that judges you.\n(Forked &amp; Broken for educational purposes)")
+    dialog.set_comments(_("The calculator that judges you.\n(Forked & Broken for educational purposes)"))
     dialog.set_website("https://github.com/niltonperimneto/NeoCalc")
     dialog.set_issue_url("https://github.com/niltonperimneto/NeoCalc/issues")
     
@@ -18,9 +18,9 @@ def present_about_dialog(parent):
     dialog.set_application_icon("model-source") 
     
     # Credits
-    dialog.add_credit_section("Original Code", ["Nilton Perim Neto"])
-    dialog.add_credit_section("New Code (Rust)", ["Nilton Perim Neto"])
-    dialog.add_credit_section("Purpose", ["To teach innocent kids Python", "To try to teach me Rust"])
+    dialog.add_credit_section(_("Original Code"), ["Nilton Perim Neto"])
+    dialog.add_credit_section(_("New Code (Rust)"), ["Nilton Perim Neto"])
+    dialog.add_credit_section(_("Purpose"), [_("To teach innocent kids Python"), _("To try to teach me Rust")])
     
     # Copyright
     dialog.set_copyright("© 2025 Nilton Perim Neto")

@@ -1,16 +1,23 @@
 /* Gruvbox Dark Theme */
 
-window,
-.background {
-    background-color: #282828;
-    color: #ebdbb2;
-}
+@define-color window_bg_color #282828;
+@define-color window_fg_color #ebdbb2;
 
-headerbar {
-    background-color: #1d2021;
-    color: #ebdbb2;
-    border-bottom: 1px solid #3c3836;
-}
+@define-color headerbar_bg_color #1d2021;
+@define-color headerbar_fg_color #ebdbb2;
+@define-color headerbar_border_color #3c3836;
+@define-color headerbar_backdrop_color @window_bg_color;
+@define-color headerbar_shade_color rgba(0, 0, 0, 0.36);
+
+@define-color popover_bg_color #282828;
+@define-color popover_fg_color #ebdbb2;
+
+@define-color view_bg_color #282828;
+@define-color view_fg_color #ebdbb2;
+
+@define-color card_bg_color #3c3836;
+@define-color card_fg_color #ebdbb2;
+@define-color card_shade_color rgba(0, 0, 0, 0.36);
 
 /* Calculators Grid */
 .calc-grid-button {
