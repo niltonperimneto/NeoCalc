@@ -3,6 +3,11 @@
 @define-color window_bg_color #2e3440;
 @define-color window_fg_color #d8dee9;
 
+@define-color accent_bg_color #88c0d0;
+@define-color accent_fg_color #2e3440;
+@define-color destructive_bg_color #bf616a;
+@define-color destructive_fg_color #d8dee9;
+
 @define-color headerbar_bg_color #3b4252;
 @define-color headerbar_fg_color #d8dee9;
 @define-color headerbar_border_color #4c566a;
@@ -70,4 +75,14 @@
 .sidebar-list row:selected {
     background-color: #88c0d0;
     color: #2e3440;
+}
+
+/* Semantic Overrides */
+.calc-grid-button.suggested-action {
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+}
+.calc-grid-button.destructive-action {
+    background-color: @destructive_bg_color;
+    color: @destructive_fg_color;
 }

@@ -16,8 +16,8 @@ class Calculator(Adw.ApplicationWindow):
     def __init__(self, app):
         super().__init__(application=app)
         self.set_title("NeoCalc")
-        self.set_default_size(320, 500)
-        self.set_size_request(320, 400)
+        self.set_default_size(320, 540)
+        self.set_size_request(300, 500)
         self.set_resizable(True)
 
         # --- Setup Logic ---
@@ -43,6 +43,14 @@ class Calculator(Adw.ApplicationWindow):
         """Initializes the main window layout using OverlaySplitView."""
         self.split_view = Adw.OverlaySplitView()
         self.split_view.set_show_sidebar(False)
+
+        # Breakpoint for responsive sidebar (collapsed < 600px)
+        breakpoint = Adw.Breakpoint.new(
+            Adw.BreakpointCondition.new_length(Adw.BreakpointConditionLengthType.MAX_WIDTH, 600, Adw.LengthUnit.SP)
+        )
+        breakpoint.add_setter(self.split_view, "collapsed", True)
+        self.add_breakpoint(breakpoint)
+
         self.set_content(self.split_view)
 
         # 1. Sidebar (Using new SidebarView)
@@ -56,18 +64,24 @@ class Calculator(Adw.ApplicationWindow):
         self.setup_content()
 
     def setup_content(self):
-        """Constructs the main content area."""
-        content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        """Constructs the main content area using Adw.ToolbarView."""
+        toolbar_view = Adw.ToolbarView()
         
         # 1. Header (Using new HeaderView)
         self.header_view = HeaderView(self)
-        content_box.append(self.header_view)
+        # Add to top bars, not content
+        toolbar_view.add_top_bar(self.header_view)
         # Expose type dropdown for actions to control it
         self.type_dropdown = self.header_view.type_dropdown
+
+        # Content Box for the rest
+        content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
 
         # 2. Calculator Header Extension: display only
         calc_header = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         calc_header.add_css_class("calculator-header-extension")
+        # Critical: Display takes all available vertical space (3/4 goal)
+        calc_header.set_vexpand(True)
 
         # Placeholder for the display - NOW A STACK
         self.display_stack = Gtk.Stack()
@@ -76,33 +90,25 @@ class Calculator(Adw.ApplicationWindow):
 
         content_box.append(calc_header)
 
-        # 3. Tab View (Content)
+        # 3. Tab View (Content - The Grid)
         self.tab_view = Adw.TabView()
         # Rust backend handles: self.tab_view.connect("notify::selected-page", self.on_tab_page_changed)
-        self.tab_view.set_vexpand(True)
+        # Critical: Grid only takes what it needs (min-height ~1/4 goal)
+        self.tab_view.set_vexpand(False)
         self.tab_view.set_hexpand(True)
         content_box.append(self.tab_view)
         
+        # Set Content
+        toolbar_view.set_content(content_box)
+        
         # Attach to View
-        nav_page = Adw.NavigationPage(child=content_box, title="Calculator")
+        nav_page = Adw.NavigationPage(child=toolbar_view, title="Calculator")
         self.split_view.set_content(nav_page)
 
     def on_toggle_sidebar(self, button):
+        """Toggles the sidebar visibility, letting AdwOverlaySplitView handle the animation/mode."""
         current_state = self.split_view.get_show_sidebar()
-        new_state = not current_state
-        
-        if new_state:
-            # Force window to expand by setting minimum size
-            self.set_size_request(600, 500)
-            GLib.timeout_add(150, self._show_sidebar_after_resize)
-        else:
-            self.split_view.set_show_sidebar(False)
-            GLib.timeout_add(100, lambda: self.set_default_size(320, 500) or False)
-
-    def _show_sidebar_after_resize(self):
-        self.split_view.set_show_sidebar(True)
-        self.set_size_request(320, 400)
-        return False
+        self.split_view.set_show_sidebar(not current_state)
 
     def setup_keyboard_controller(self):
         # We now rely on standard Actions for Alt+N shortcuts.

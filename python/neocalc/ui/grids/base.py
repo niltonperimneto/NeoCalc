@@ -26,18 +26,15 @@ class CalculatorGrid(Gtk.Grid):
         button.add_css_class("calc-grid-button")
         if label == "=":
             button.add_css_class("suggested-action")
-        elif label == "C":
+            button.add_css_class("accent") # Compability with some semantic themes
+        elif label in ("C", "AC", "Delete", "⌫"):
             button.add_css_class("destructive-action")
+            button.add_css_class("destructive")
 
     def _apply_button_layout(self, button, col):
         """Configures button expansion and sizing."""
-        # Special layout handling for operators in standard grid (Col 3)
-        if col == 3 and not self.get_column_homogeneous(): 
-             # Only if we are not homogeneous (Standard Grid)
-             button.set_hexpand(False)
-             button.set_size_request(70, -1)
-        else:
-             button.set_hexpand(True)
+        # Uniform fluid layout
+        button.set_hexpand(True)
         button.set_vexpand(True)
 
     def on_button_clicked(self, button):

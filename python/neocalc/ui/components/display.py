@@ -43,8 +43,7 @@ class CalculatorDisplay(Gtk.Box):
         # Scrolled window for history
         self.history_scroll = Gtk.ScrolledWindow()
         self.history_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        self.history_scroll.set_max_content_height(150)
-        self.history_scroll.set_propagate_natural_height(True)
+        self.history_scroll.set_vexpand(True)  # Expand to fill space
         self.history_scroll.set_child(self.history_label)
         self.history_scroll.add_css_class("calc-history-scroll")
         
@@ -54,6 +53,9 @@ class CalculatorDisplay(Gtk.Box):
         self.display_entry.add_css_class("calc-entry-display")
         self.display_entry.set_text("0")
         self.display_entry.set_hexpand(True)
+        self.display_entry.set_width_chars(1) # Allow shrinking
+        self.display_entry.set_max_width_chars(0) # No max
+        # Entry does not vexpand, it stays at bottom of display box
         
         # Connect signals
         self.display_entry.connect("changed", self._on_entry_changed)

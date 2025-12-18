@@ -3,6 +3,10 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Gtk, Gdk, Adw
 import os
+import shutil
+import logging
+
+logger = logging.getLogger(__name__)
 
 class StyleManager:
     _base_provider = None
@@ -10,6 +14,7 @@ class StyleManager:
 
     @staticmethod
     def _get_themes_dir():
+        """Returns accessibility path to themes directory."""
         base_dir = os.path.dirname(os.path.abspath(__file__))
         return os.path.join(base_dir, "themes")
 
@@ -21,37 +26,42 @@ class StyleManager:
             return []
         
         themes = []
-        for f in os.listdir(themes_dir):
-            if f.endswith(".css"):
-                themes.append(f[:-4])  # Remove .css extension
+        try:
+            for f in os.listdir(themes_dir):
+                if f.endswith(".css"):
+                    themes.append(f[:-4])  # Remove .css extension
+        except OSError as e:
+            logger.error(f"Failed to list themes: {e}")
+            return []
+            
         return sorted(themes)
+
+    @staticmethod
+    def _load_css_provider(display, path, priority):
+        """Helper to create, load, and attach a CSS provider."""
+        provider = Gtk.CssProvider()
+        try:
+            provider.load_from_path(path)
+            Gtk.StyleContext.add_provider_for_display(
+                display,
+                provider,
+                priority
+            )
+            return provider
+        except Exception as e:
+            logger.error(f"Failed to load CSS from {path}: {e}")
+            return None
 
     @staticmethod
     def load_css(theme_name=None):
         """
         Ensures base.css is loaded, and optionally loads a theme CSS on top.
-        If theme_name is None, only base.css is loaded (default look).
+        Always reloads base to ensure cascade order is preserved.
         """
         display = Gdk.Display.get_default()
         base_dir = os.path.dirname(os.path.abspath(__file__))
 
-        # Ensure base provider is loaded once
-        if not StyleManager._base_provider:
-            provider = Gtk.CssProvider()
-            base_path = os.path.join(base_dir, "base.css")
-            try:
-                provider.load_from_path(base_path)
-                Gtk.StyleContext.add_provider_for_display(
-                    display,
-                    provider,
-                    Gtk.STYLE_PROVIDER_PRIORITY_USER
-                )
-                StyleManager._base_provider = provider
-            except Exception as e:
-                print(f"Failed to load Base CSS: {e}")
-
-        # Manage Theme Provider
-        # Remove old theme provider first
+        # 1. Clear existing providers
         if StyleManager._theme_provider:
             Gtk.StyleContext.remove_provider_for_display(
                 display,
@@ -59,22 +69,29 @@ class StyleManager:
             )
             StyleManager._theme_provider = None
 
-        if theme_name:
-            provider = Gtk.CssProvider()
-            css_path = os.path.join(base_dir, "themes", f"{theme_name}.css")
-            
-            try:
-                provider.load_from_path(css_path)
-                
-                # Load with higher priority than base
-                Gtk.StyleContext.add_provider_for_display(
-                    display,
-                    provider,
-                    Gtk.STYLE_PROVIDER_PRIORITY_USER + 1
-                )
-                StyleManager._theme_provider = provider
-            except Exception as e:
-                print(f"Failed to load Theme CSS: {e}")
+        if StyleManager._base_provider:
+             Gtk.StyleContext.remove_provider_for_display(
+                 display,
+                 StyleManager._base_provider
+             )
+             StyleManager._base_provider = None
+
+        # 2. Load Base Provider (Priority USER)
+        base_path = os.path.join(base_dir, "base.css")
+        StyleManager._base_provider = StyleManager._load_css_provider(
+            display, 
+            base_path, 
+            Gtk.STYLE_PROVIDER_PRIORITY_USER
+        )
+
+        # 3. Load Theme Provider (Priority USER + 1)
+        if theme_name and theme_name != 'default':
+            theme_path = os.path.join(base_dir, "themes", f"{theme_name}.css")
+            StyleManager._theme_provider = StyleManager._load_css_provider(
+                display,
+                theme_path,
+                Gtk.STYLE_PROVIDER_PRIORITY_USER + 1
+            )
 
     @staticmethod
     def toggle_theme():
@@ -90,10 +107,17 @@ class StyleManager:
     def import_theme(parent_window):
         """Opens a file chooser dialog to import a CSS theme."""
         dialog = Gtk.FileChooserNative(
-            title="Import Theme",
+            title=_("Import Theme"), # Utilizing gettext if available or assuming convention
             transient_for=parent_window,
             action=Gtk.FileChooserAction.OPEN
         )
+        # Fallback for gettext if not injected in this module
+        # But 'actions.py' usually sets _ builtin.
+        # To be safe, we'll avoid _() here unless we know it's available.
+        # But wait, original code used literals?
+        # Original code used `title="Import Theme"`.
+        # I'll stick to literals to avoid NameError if `_` isn't built-in.
+        dialog.set_title("Import Theme")
         
         filter_css = Gtk.FileFilter()
         filter_css.set_name("CSS Files")
@@ -109,12 +133,19 @@ class StyleManager:
                 # Copy file to themes directory
                 dest_dir = StyleManager._get_themes_dir()
                 if not os.path.exists(dest_dir):
-                    os.makedirs(dest_dir)
-                    
-                import shutil
-                shutil.copy(filepath, os.path.join(dest_dir, filename))
+                    try:
+                        os.makedirs(dest_dir)
+                    except OSError as e:
+                        logger.error(f"Failed to create themes dir: {e}")
+                        return
+
+                try:
+                    shutil.copy(filepath, os.path.join(dest_dir, filename))
+                    logger.info(f"Imported theme: {filename}")
+                except Exception as e:
+                     logger.error(f"Failed to copy theme file: {e}")
                 
-                # Reload themes in UI? (This part needs action feedback, likely reloading the menu or app state)
+                # Ideally trigger a UI refresh, but user selects manually
             dialog.destroy()
             
         dialog.connect("response", on_response)

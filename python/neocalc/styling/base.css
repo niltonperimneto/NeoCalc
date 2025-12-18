@@ -1,10 +1,11 @@
 .calc-grid-button {
-    min-width: 60px;
-    min-height: 40px;
-    font-size: 1.1em;
+    min-width: 10px;
+    min-height: 36px;
+    font-size: 0.9em;
     border-radius: 6px;
     padding: 0;
-    /* Smaller buttons to give more display real estate */
+    margin: 0;
+    /* Fluid buttons that adapt to window size */
 }
 
 .calc-operator-button {
@@ -69,9 +70,9 @@
 
 .calc-entry-display {
     font-family: "Adwaita Sans";
-    font-size: 72px;
+    font-size: 48px;
     font-weight: 300;
-    padding: 16px 0;
+    padding: 8px 0;
     background-color: transparent;
     border: none;
     color: @text_color;

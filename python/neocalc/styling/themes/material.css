@@ -72,3 +72,13 @@
     background-color: #bb86fc;
     color: #121212;
 }
+
+/* Semantic Overrides */
+.calc-grid-button.suggested-action {
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+}
+.calc-grid-button.destructive-action {
+    background-color: @destructive_bg_color;
+    color: @destructive_fg_color;
+}
