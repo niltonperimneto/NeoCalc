@@ -34,11 +34,6 @@ impl CalculatorManager {
         sidebar_view: Py<PyAny>,
         display_manager: Py<PyAny>,
     ) -> PyResult<Self> {
-        let rt = tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()
-            .map_err(|e| PyRuntimeError::new_err(format!("Failed to create runtime: {}", e)))?;
-
         Ok(CalculatorManager {
             window,
             tab_view,
