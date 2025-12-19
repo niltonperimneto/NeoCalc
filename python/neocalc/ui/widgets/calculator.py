@@ -106,10 +106,25 @@ class CalculatorWidget(Gtk.Box):
             self.on_expression_changed(text)
 
     def on_display_activated(self, widget):
-        self.logic.evaluate()
+        ## Use non-blocking evaluation to keep UI responsive
+        self.logic.evaluate_non_blocking(
+            on_success=self._on_eval_success,
+            on_error=self._on_eval_error
+        )
+
+    def _on_eval_success(self, result):
+        """Called when async evaluation completes successfully."""
         self.update_display()
         self.update_history_display()
         self.trigger_name_update()
+
+    def _on_eval_error(self, error_msg):
+        """Called when async evaluation fails."""
+        ## For now, just show the error in the display like the sync version did
+        ## (The backend usually captures errors as strings in the buffer, 
+        ## but if an exception bubble up, we handle it here)
+        self.display.set_value("Error")
+        print(f"Evaluation error: {error_msg}")
 
     def on_key_pressed(self, controller, keyval, keycode, state):
 
