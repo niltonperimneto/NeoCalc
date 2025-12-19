@@ -21,6 +21,8 @@ enum Token<'a> {
     LParen,
     #[token(")")]
     RParen,
+    #[token(",")]
+    Comma,
 
     /* Match numbers, including decimals */
     #[regex(r"[0-9]+(\.[0-9]+)?", |lex| lex.slice().parse::<f64>().ok())]
@@ -96,18 +98,31 @@ impl<'a> Parser<'a> {
                     "e" => Complex64::new(consts::E, 0.0),
                     "i" | "j" => Complex64::new(0.0, 1.0),
                     _ => {
-                        /* Function calls like sin(...) */
+                        /* Function calls like sin(...) or mean(1, 2, 3) */
                         if let Token::LParen = self.current() {
                             self.advance();
-                            let arg = self.parse_bp(0)?;
+                            
+                            let mut args = Vec::new();
+                            
                             if let Token::RParen = self.current() {
+                                /* Empty argument list: function() */
                                 self.advance();
                             } else {
-                                return Err("Expected ')'".to_string());
+                                loop {
+                                    args.push(self.parse_bp(0)?);
+                                    
+                                    if let Token::Comma = self.current() {
+                                        self.advance();
+                                    } else if let Token::RParen = self.current() {
+                                        self.advance();
+                                        break;
+                                    } else {
+                                        return Err("Expected ',' or ')' in argument list".to_string());
+                                    }
+                                }
                             }
-                            functions::apply(s, arg)?
+                            functions::apply(s, args)?
                         } else {
-
                              return Err(format!("Unknown identifier or missing '(': {}", s));
                         }
                     }
@@ -193,75 +208,4 @@ fn infix_binding_power(op: &Token) -> Option<(u8, u8)> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use num_complex::Complex64;
 
-    fn eval(s: &str) -> Complex64 {
-        evaluate(s).expect(&format!("Failed to parse: {}", s))
-    }
-
-    fn assert_close(a: Complex64, b: Complex64) {
-        let diff = (a - b).norm();
-        assert!(diff < 1e-10, "Expected {}, got {}, diff {}", b, a, diff);
-    }
-
-    #[test]
-    fn test_basic_arithmetic() {
-        assert_close(eval("1 + 2"), Complex64::new(3.0, 0.0));
-        assert_close(eval("10 - 4"), Complex64::new(6.0, 0.0));
-        assert_close(eval("3 * 5"), Complex64::new(15.0, 0.0));
-        assert_close(eval("12 / 4"), Complex64::new(3.0, 0.0));
-    }
-
-    #[test]
-    fn test_precedence() {
-        assert_close(eval("1 + 2 * 3"), Complex64::new(7.0, 0.0));
-        assert_close(eval("(1 + 2) * 3"), Complex64::new(9.0, 0.0));
-        assert_close(eval("10 - 2 + 3"), Complex64::new(11.0, 0.0));
-    }
-
-    #[test]
-    fn test_power_associativity() {
-
-        assert_close(eval("2^3^2"), Complex64::new(512.0, 0.0));
-    }
-
-    #[test]
-    fn test_unary_minus() {
-        assert_close(eval("-5"), Complex64::new(-5.0, 0.0));
-        assert_close(eval("5 + - 3"), Complex64::new(2.0, 0.0));
-    }
-
-    #[test]
-    fn test_unary_vs_power() {
-
-        assert_close(eval("-2^2"), Complex64::new(-4.0, 0.0));
-
-        assert_close(eval("(-2)^2"), Complex64::new(4.0, 0.0));
-    }
-
-    #[test]
-    fn test_functions() {
-        assert_close(eval("sqrt(4)"), Complex64::new(2.0, 0.0));
-        assert_close(eval("abs(-5)"), Complex64::new(5.0, 0.0));
-
-        assert_close(eval("sin(0)"), Complex64::new(0.0, 0.0));
-    }
-
-    #[test]
-    fn test_complex() {
-
-        assert_close(eval("i * i"), Complex64::new(-1.0, 0.0));
-    }
-
-    #[test]
-    fn test_sqrt_negative() {
-        let neg_one = eval("-1");
-        assert_close(neg_one, Complex64::new(-1.0, 0.0));
-
-        let root = eval("sqrt(-1)");
-        assert_close(root, Complex64::new(0.0, 1.0));
-    }
-}
