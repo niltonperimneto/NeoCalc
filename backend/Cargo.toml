@@ -13,4 +13,4 @@ pyo3-async-runtimes = { version = "0.27", features = ["tokio-runtime"] }
 tokio = { version = "1.48", features = ["full"] }
 num-complex = "0.4.6"
 logos = "0.14"
-gettext-rs = { version = "0.7" }
+gettext-rs = { version = "0.7", features = ["gettext-system"] }
