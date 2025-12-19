@@ -130,6 +130,7 @@ jobs:
           cp /ucrt64/bin/libintl-8.dll dist/NeoCalc/
           cp /ucrt64/bin/libgcc_s_seh-1.dll dist/NeoCalc/
           cp /ucrt64/bin/libwinpthread-1.dll dist/NeoCalc/
+          cp /ucrt64/bin/libiconv-2.dll dist/NeoCalc/
           
           # Copy Python Standard Library (fixes module errors)
           # UCRT64 Environment puts it in /ucrt64/lib/python3.X
