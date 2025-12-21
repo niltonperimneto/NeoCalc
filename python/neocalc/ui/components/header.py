@@ -4,12 +4,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Gtk, Adw, Gio, GObject
 from ...styling.manager import StyleManager
 
-class CalcType(GObject.GObject):
-    def __init__(self, mode_id, label, icon):
-        super().__init__()
-        self.mode_id = mode_id
-        self.label = label
-        self.icon = icon
+
 
 class HeaderView(Adw.Bin):
     """Handles the application header bar, including dropdown and menu."""
@@ -29,44 +24,31 @@ class HeaderView(Adw.Bin):
         toggle_btn.add_css_class("header-btn")
         self.header_bar.pack_start(toggle_btn)
 
-        self.setup_dropdown()
+        self.setup_mode_switch()
 
         self.setup_menu()
 
-    def setup_dropdown(self):
-        type_model = Gio.ListStore(item_type=GObject.Object)
-        type_model.append(CalcType("standard", _("Standard"), "view-grid-symbolic"))
-        type_model.append(CalcType("scientific", _("Scientific"), "applications-science-symbolic"))
+    def setup_mode_switch(self):
+        menu_model = Gio.Menu()
+        menu_model.append(_("Standard"), "win.set_mode('standard')")
+        menu_model.append(_("Scientific"), "win.set_mode('scientific')")
 
-        factory = Gtk.SignalListItemFactory()
-        def setup_factory(factory, list_item):
-            box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-            icon = Gtk.Image()
-            icon.set_pixel_size(18)
-            box.append(icon)
-            label = Gtk.Label()
-            label.set_xalign(0)
-            box.append(label)
-            list_item.set_child(box)
+        self.split_button = Adw.SplitButton(label=_("Standard Mode"))
+        self.split_button.set_icon_name("view-grid-symbolic")
+        self.split_button.set_menu_model(menu_model)
+        self.split_button.set_tooltip_text(_("Toggle Calculator Mode"))
+        
+        self.split_button.connect("clicked", self.main_window.on_split_button_clicked)
+        
+        self.header_bar.set_title_widget(self.split_button)
 
-        def bind_factory(factory, list_item):
-            item = list_item.get_item()
-            box = list_item.get_child()
-            icon = box.get_first_child()
-            label = icon.get_next_sibling()
-            icon.set_from_icon_name(item.icon)
-            label.set_text(item.label)
-
-        factory.connect("setup", setup_factory)
-        factory.connect("bind", bind_factory)
-
-        self.type_dropdown = Gtk.DropDown(model=type_model, factory=factory)
-        self.type_dropdown.set_selected(0)
-        self.type_dropdown.set_hexpand(False)
-        self.type_dropdown.set_halign(Gtk.Align.CENTER)
-        self.type_dropdown.add_css_class("center-dropdown")
-        self.type_dropdown.connect("notify::selected", self.main_window.on_type_dropdown_changed)
-        self.header_bar.set_title_widget(self.type_dropdown)
+    def set_mode_display(self, mode_id):
+        if mode_id == "standard":
+            self.split_button.set_label(_("Standard Mode"))
+            self.split_button.set_icon_name("view-grid-symbolic")
+        elif mode_id == "scientific":
+            self.split_button.set_label(_("Scientific Mode"))
+            self.split_button.set_icon_name("applications-science-symbolic")
 
     def setup_menu(self):
         menu_model = Gio.Menu()

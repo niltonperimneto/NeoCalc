@@ -22,6 +22,7 @@ class Calculator(Adw.ApplicationWindow):
 
         ## Initialize registry for handling user actions and shortcuts
         self.action_registry = ActionRegistry(self)
+        self.register_custom_actions()
         self.setup_layout()
 
         ## Set up managers for display logic (what is shown) and calculation logic
@@ -70,8 +71,6 @@ class Calculator(Adw.ApplicationWindow):
         self.header_view = HeaderView(self)
 
         toolbar_view.add_top_bar(self.header_view)
-        ## Reference the calculator type dropdown from the header
-        self.type_dropdown = self.header_view.type_dropdown
 
         ## Main container for calculator content
         content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
@@ -125,24 +124,42 @@ class Calculator(Adw.ApplicationWindow):
     def switch_display_for(self, calc_widget):
         self.display_manager.switch_display_for(calc_widget)
 
-    def on_type_dropdown_changed(self, dropdown, param):
-        selected_item = dropdown.get_selected_item()
-        if not selected_item:
+    def register_custom_actions(self):
+        action = Gio.SimpleAction.new("set_mode", GLib.VariantType.new("s"))
+        action.connect("activate", self.on_set_mode_action)
+        self.add_action(action)
+
+    def on_set_mode_action(self, action, param):
+        mode_id = param.get_string()
+        self.apply_mode(mode_id)
+
+    def on_split_button_clicked(self, button):
+        ## Toggle between 'standard' and 'scientific'
+        current_page = self.tab_view.get_selected_page()
+        if not current_page or not hasattr(current_page, 'calc_widget'):
             return
-            
-        mode_id = selected_item.mode_id
+
+        calc_widget = current_page.calc_widget
+        current_visible = calc_widget.get_stack().get_visible_child_name()
         
+        new_mode = "scientific" if current_visible == "standard" else "standard"
+        self.apply_mode(new_mode)
+
+    def apply_mode(self, mode_id):
         page = self.tab_view.get_selected_page()
         if page and hasattr(page, 'calc_widget'):
             calc_widget = page.calc_widget
             if hasattr(calc_widget, 'get_stack'):
                 calc_widget.get_stack().set_visible_child_name(mode_id)
+        
+        ## Update header display
+        self.header_view.set_mode_display(mode_id)
 
     def on_switch_scientific(self, action, param):
-        self.header_view.set_selected_type(1)
+        self.apply_mode("scientific")
 
     def on_switch_standard(self, action, param):
-        self.header_view.set_selected_type(0)
+        self.apply_mode("standard")
 
     def on_switch_calculator(self, action, param, calc_number):
         if calc_number <= self.tab_view.get_n_pages():

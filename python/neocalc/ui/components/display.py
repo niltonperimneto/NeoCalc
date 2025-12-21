@@ -31,18 +31,15 @@ class CalculatorDisplay(Gtk.Box):
 
         self._internal_update = False
 
-        self.history_label = Gtk.Label()
-        self.history_label.set_xalign(1.0)
-        self.history_label.set_justify(Gtk.Justification.RIGHT)
-        self.history_label.set_wrap(True)
-        self.history_label.set_selectable(True)
-        self.history_label.add_css_class("calc-history")
-        self.history_label.set_text("")
+        self.history_list = Gtk.ListBox()
+        self.history_list.set_selection_mode(Gtk.SelectionMode.NONE)
+        self.history_list.add_css_class("calc-history-list")
+        self.history_list.connect("row-activated", self._on_history_row_activated)
 
         self.history_scroll = Gtk.ScrolledWindow()
         self.history_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         self.history_scroll.set_vexpand(True)
-        self.history_scroll.set_child(self.history_label)
+        self.history_scroll.set_child(self.history_list)
         self.history_scroll.add_css_class("calc-history-scroll")
 
         self.display_entry = Gtk.Entry()
@@ -56,8 +53,14 @@ class CalculatorDisplay(Gtk.Box):
         self.display_entry.connect("changed", self._on_entry_changed)
         self.display_entry.connect("activate", self._on_entry_activate)
 
+        self.preview_label = Gtk.Label()
+        self.preview_label.set_xalign(1.0)
+        self.preview_label.add_css_class("calc-preview")
+        self.preview_label.set_text("")
+
         self.append(self.history_scroll)
         self.append(self.display_entry)
+        self.append(self.preview_label)
 
     def get_text(self):
         return self.display_entry.get_text()
@@ -69,12 +72,40 @@ class CalculatorDisplay(Gtk.Box):
         self.display_entry.set_position(-1)
         self._internal_update = False
 
+    def set_preview(self, text):
+        """Set the preview label text."""
+        self.preview_label.set_text(text)
+
     def set_history(self, history_list):
+        """Update history listbox."""
+        ## Clear existing children
+        while True:
+            child = self.history_list.get_first_child()
+            if not child:
+                break
+            self.history_list.remove(child)
+
         if history_list:
-            recent = history_list[-5:]
-            self.history_label.set_text("\n".join(recent))
-        else:
-            self.history_label.set_text("")
+            ## Show recent items
+            for item_text in history_list[-10:]:
+                row = Gtk.ListBoxRow()
+                label = Gtk.Label(label=item_text)
+                label.set_xalign(1.0)
+                label.add_css_class("calc-history-item")
+                row.set_child(label)
+                self.history_list.append(row)
+    
+    def _on_history_row_activated(self, box, row):
+        """Handle history item click."""
+        label = row.get_child()
+        if label:
+             text = label.get_text()
+             ## Extract result (basic assumption: "expr = result")
+             if "=" in text:
+                 result = text.split("=")[-1].strip()
+                 self.insert_at_cursor(result)
+             else:
+                 self.insert_at_cursor(text)
 
     def insert_at_cursor(self, text):
         """Insert text at current cursor position, handling mapping."""

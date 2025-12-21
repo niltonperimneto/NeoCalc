@@ -131,8 +131,28 @@
 
 .calc-preview {
     font-family: "Adwaita Sans";
-    font-size: 16px;
+    font-size: 24px;
     font-weight: 300;
-    padding: 4px 0;
-    min-height: 40px;
+    padding: 0 8px;
+    min-height: 30px;
+    color: @text_color;
+    opacity: 0.5;
+}
+
+.calc-history-list {
+    background-color: transparent;
+}
+
+.calc-history-list row {
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.calc-history-list row:hover {
+    background-color: alpha(@text_color, 0.05);
+}
+
+.calc-history-item {
+    font-size: 14px;
+    opacity: 0.7;
 }

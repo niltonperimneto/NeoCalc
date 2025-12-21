@@ -16,6 +16,7 @@ class CalculatorWidget(Gtk.Box):
 
         self.parent_window = None
         self.logic = CalculatorLogic()
+        self.preview_logic = CalculatorLogic()
 
         GLib.idle_add(self.update_display)
 
@@ -41,10 +42,12 @@ class CalculatorWidget(Gtk.Box):
 
         self.view_stack = Adw.ViewStack()
 
+        from ..grids.standard import ButtonGrid
         button_grid = ButtonGrid(self)
         self.view_stack.add_titled(button_grid, "standard", "Standard")
         self.view_stack.get_page(button_grid).set_icon_name("view-grid-symbolic")
 
+        from ..grids.scientific import ScientificGrid
         scientific_grid = ScientificGrid(self)
         self.view_stack.add_titled(scientific_grid, "scientific", "Scientific")
         self.view_stack.get_page(scientific_grid).set_icon_name(
@@ -86,6 +89,7 @@ class CalculatorWidget(Gtk.Box):
         self.display.set_value(text)
         if self.on_expression_changed:
             self.on_expression_changed(text)
+        self.update_preview(text)
 
     def insert_at_cursor(self, text):
         self.display.insert_at_cursor(text)
@@ -99,6 +103,28 @@ class CalculatorWidget(Gtk.Box):
         self.display.set_value(text)
         if self.on_expression_changed:
             self.on_expression_changed(text)
+        self.update_preview(text)
+
+    def update_preview(self, text):
+        """Calculate and show preview result."""
+        if not text:
+            self.display.set_preview("")
+            return
+
+        try:
+            # Avoid preview for simple numbers
+            if text.replace('.', '', 1).isdigit():
+                self.display.set_preview("")
+                return
+
+            result = self.preview_logic.evaluate(text)
+            # If result is same as input (no calc happened), hide it
+            if result == text or result == "Error":
+                 self.display.set_preview("")
+            else:
+                 self.display.set_preview(result)
+        except Exception:
+            self.display.set_preview("")
 
     def on_display_edited(self, widget, text):
         self.logic.set_expression(text)
