@@ -5,8 +5,9 @@ from gi.repository import Gtk, Adw, Gio, GObject
 from ...styling.manager import StyleManager
 
 class CalcType(GObject.GObject):
-    def __init__(self, label, icon):
+    def __init__(self, mode_id, label, icon):
         super().__init__()
+        self.mode_id = mode_id
         self.label = label
         self.icon = icon
 
@@ -34,8 +35,8 @@ class HeaderView(Adw.Bin):
 
     def setup_dropdown(self):
         type_model = Gio.ListStore(item_type=GObject.Object)
-        type_model.append(CalcType(_("Standard"), "view-grid-symbolic"))
-        type_model.append(CalcType(_("Scientific"), "applications-science-symbolic"))
+        type_model.append(CalcType("standard", _("Standard"), "view-grid-symbolic"))
+        type_model.append(CalcType("scientific", _("Scientific"), "applications-science-symbolic"))
 
         factory = Gtk.SignalListItemFactory()
         def setup_factory(factory, list_item):

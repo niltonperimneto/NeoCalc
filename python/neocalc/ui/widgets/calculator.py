@@ -136,9 +136,11 @@ class CalculatorWidget(Gtk.Box):
         key_char = Gdk.keyval_to_unicode(keyval)
         valid_chars = "0123456789.+-*/^%()"
 
-        if key_char and chr(key_char) in valid_chars:
-            self.insert_at_cursor(chr(key_char))
-            return True
+        if key_char:
+            char = chr(key_char)
+            if char in valid_chars or char.isalpha():
+                self.insert_at_cursor(char)
+                return True
 
         name = Gdk.keyval_name(keyval)
 

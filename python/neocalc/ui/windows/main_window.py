@@ -126,15 +126,17 @@ class Calculator(Adw.ApplicationWindow):
         self.display_manager.switch_display_for(calc_widget)
 
     def on_type_dropdown_changed(self, dropdown, param):
-        idx = dropdown.get_selected()
+        selected_item = dropdown.get_selected_item()
+        if not selected_item:
+            return
+            
+        mode_id = selected_item.mode_id
+        
         page = self.tab_view.get_selected_page()
         if page and hasattr(page, 'calc_widget'):
             calc_widget = page.calc_widget
             if hasattr(calc_widget, 'get_stack'):
-                if idx == 0:
-                    calc_widget.get_stack().set_visible_child_name('standard')
-                elif idx == 1:
-                    calc_widget.get_stack().set_visible_child_name('scientific')
+                calc_widget.get_stack().set_visible_child_name(mode_id)
 
     def on_switch_scientific(self, action, param):
         self.header_view.set_selected_type(1)
