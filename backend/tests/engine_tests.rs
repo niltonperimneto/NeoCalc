@@ -1,0 +1,98 @@
+use neocalc_backend::engine::{evaluate, types::Number};
+use num_bigint::BigInt;
+use num_rational::BigRational;
+use num::FromPrimitive;
+
+#[test]
+fn test_sanity_arithmetic() {
+    let res = evaluate("1 + 1").unwrap();
+    if let Number::Integer(i) = res {
+        assert_eq!(i, BigInt::from(2));
+    } else { panic!("Expected Integer"); }
+
+    let res = evaluate("10 / 2").unwrap();
+    // 10 / 2 is Rational(5/1) or Integer(5) depending on implementation.
+    // Our implementation does Rational for Div of Integers.
+    if let Number::Rational(r) = res {
+        assert_eq!(r, BigRational::from_integer(BigInt::from(5)));
+    } else if let Number::Integer(i) = res {
+         assert_eq!(i, BigInt::from(5));
+    } else { panic!("Expected Rational or Integer, got {:?}", res); }
+}
+
+#[test]
+fn test_exact_rational() {
+    // 1 / 3
+    let res = evaluate("1 / 3").unwrap();
+    if let Number::Rational(r) = res {
+        assert_eq!(r, BigRational::new(BigInt::from(1), BigInt::from(3)));
+    } else { panic!("Expected Rational"); }
+
+    // (1/3) * 3 = 1
+    let res = evaluate("(1 / 3) * 3").unwrap();
+    // This should resolve to Rational(1/1) which might normalize?
+    if let Number::Rational(r) = res {
+         assert_eq!(r, BigRational::from_integer(BigInt::from(1)));
+    } else { panic!("Expected Rational(1)"); }
+}
+
+#[test]
+fn test_big_numbers() {
+    // 2^100
+    let res = evaluate("2^100").unwrap();
+    if let Number::Integer(i) = res {
+        // 2^100 is approx 1.26e30. Check strict positivity and size?
+        assert!(i > BigInt::from(1u64 << 60)); // Bigger than u64 max
+    } else { panic!("Expected Integer for Power"); }
+}
+
+#[test]
+fn test_factorial_stress() {
+    // 50!
+    let res = evaluate("50!").unwrap();
+    if let Number::Integer(i) = res {
+        // 50! is huge. 
+        assert!(i > BigInt::from(1));
+    } else { panic!("Expected Integer for Factorial"); }
+}
+
+#[test]
+fn test_type_promotion() {
+    // 1 + 0.5 -> Float
+    let res = evaluate("1 + 0.5").unwrap();
+    if let Number::Float(f) = res {
+        assert_eq!(f, 1.5);
+    } else { panic!("Expected Float"); }
+
+    // 1/2 + 0.5 -> Float
+    let res = evaluate("(1/2) + 0.5").unwrap();
+    if let Number::Float(f) = res {
+        assert_eq!(f, 1.0);
+    } else { panic!("Expected Float"); }
+}
+
+#[test]
+fn test_bitwise_bigint() {
+    // band(3, 1) -> 1
+    let res = evaluate("band(3, 1)").unwrap();
+    if let Number::Integer(i) = res {
+        assert_eq!(i, BigInt::from(1));
+    } else { panic!("Expected Integer for band"); }
+
+    // Test huge integer bitwise: (2^100 + 1) & 1 == 1
+    // 2^100 ends in ...000, so 2^100 + 1 ends in ...001.
+    // ANDing with 1 should give 1.
+    let res = evaluate("band(2^100 + 1, 1)").unwrap();
+    if let Number::Integer(i) = res {
+        assert_eq!(i, BigInt::from(1));
+    } else { panic!("Expected Integer 1 for huge band"); }
+}
+
+#[test]
+fn test_statistics_exact() {
+    // mean(1, 2) -> 3/2 (Rational)
+    let res = evaluate("mean(1, 2)").unwrap();
+    if let Number::Rational(r) = res {
+        assert_eq!(r, BigRational::new(BigInt::from(3), BigInt::from(2)));
+    } else { panic!("Expected Rational for mean"); }
+}

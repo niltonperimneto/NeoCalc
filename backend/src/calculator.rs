@@ -83,7 +83,7 @@ impl Calculator {
         /* Call the core engine to calculate result */
         let res = engine::evaluate(&expr_to_eval);
         let output = match res {
-            Ok(c) => utils::format_complex(c),
+            Ok(n) => utils::format_number(n),
             Err(_) => "Error".to_string(),
         };
 
@@ -122,7 +122,7 @@ impl Calculator {
             let output = tokio::task::spawn_blocking(move || {
                 let res = engine::evaluate(&expr_for_task);
                 match res {
-                    Ok(c) => utils::format_complex(c),
+                    Ok(n) => utils::format_number(n),
                     Err(_) => "Error".to_string(),
                 }
             }).await.map_err(|e| PyRuntimeError::new_err(format!("Join error: {}", e)))?;

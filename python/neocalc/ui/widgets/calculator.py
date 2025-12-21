@@ -185,7 +185,7 @@ class CalculatorWidget(Gtk.Box):
              self.backspace_at_cursor()
              return True
 
-        elif name in ("Return", "KP_Enter"):
+        elif name in ("Return", "KP_Enter", "ISO_Enter", "equal"):
             self.on_display_activated(None)
             return True
 

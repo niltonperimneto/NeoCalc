@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyModule;
 use pyo3::Bound;
 
-mod engine;
+pub mod engine;
 mod managers;
 mod utils;
 mod calculator;

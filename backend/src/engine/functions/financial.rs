@@ -1,4 +1,4 @@
-use num_complex::Complex64;
+use num::complex::Complex64;
 
 /// Future Value
 /// fv(rate, nper, pv)

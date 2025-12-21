@@ -1,7 +1,7 @@
 use std::sync::{Mutex, MutexGuard};
 use pyo3::prelude::*;
 use pyo3::exceptions::PyRuntimeError;
-use num_complex::Complex64;
+use num::complex::Complex64;
 
 pub const EPSILON: f64 = 1e-10;
 
@@ -17,6 +17,8 @@ pub fn format_float(val: f64) -> String {
         val.to_string()
     }
 }
+
+use crate::engine::types::Number;
 
 pub fn format_complex(c: Complex64) -> String {
     let re = c.re;
@@ -34,6 +36,21 @@ pub fn format_complex(c: Complex64) -> String {
         } else {
              format!("{} {} {}i", re_str, if im < 0.0 { "-" } else { "+" }, im_str)
         }
+    }
+}
+
+pub fn format_number(n: Number) -> String {
+    match n {
+        Number::Integer(i) => i.to_string(),
+        Number::Rational(r) => {
+            if r.is_integer() {
+                r.to_integer().to_string()
+            } else {
+                format!("{}/{}", r.numer(), r.denom())
+            }
+        },
+        Number::Float(f) => format_float(f),
+        Number::Complex(c) => format_complex(c),
     }
 }
 

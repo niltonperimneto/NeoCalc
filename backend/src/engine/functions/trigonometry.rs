@@ -1,4 +1,4 @@
-use num_complex::Complex64;
+use num::complex::Complex64;
 
 pub fn sin(c: Complex64) -> Result<Complex64, String> { Ok(c.sin()) }
 pub fn cos(c: Complex64) -> Result<Complex64, String> { Ok(c.cos()) }

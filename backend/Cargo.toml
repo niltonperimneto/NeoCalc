@@ -11,6 +11,9 @@ crate-type = ["cdylib", "rlib"]
 pyo3 = { version = "0.27.2" }
 pyo3-async-runtimes = { version = "0.27", features = ["tokio-runtime"] }
 tokio = { version = "1.48", features = ["full"] }
-num-complex = "0.4.6"
+num = "0.4"
+num-bigint = "0.4"
+num-rational = "0.4"
+num-traits = "0.2"
 logos = "0.16"
 gettext-rs = { version = "0.7", features = ["gettext-system"] }
