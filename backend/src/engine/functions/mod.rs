@@ -4,6 +4,8 @@ pub mod complex_ops;
 pub mod core_funcs;
 pub mod statistics;
 pub mod bitwise;
+pub mod financial;
+
 
 use num_complex::Complex64;
 
@@ -54,6 +56,12 @@ pub fn apply(name: &str, args: Vec<Complex64>) -> Result<Complex64, String> {
         "bnot" => bitwise::bnot(&args),
         "lsh" => bitwise::lsh(&args),
         "rsh" => bitwise::rsh(&args),
+        "rol" => bitwise::rol(&args),
+        "ror" => bitwise::ror(&args),
+
+        /* Financial */
+        "fv" => financial::fv(&args),
+        "pv" => financial::pv(&args),
 
         _ => Err(format!("'{}' is not a known function.", name)),
     }

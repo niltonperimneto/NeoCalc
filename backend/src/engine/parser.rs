@@ -24,8 +24,10 @@ enum Token<'a> {
     #[token(",")]
     Comma,
 
-    /* Match numbers, including decimals */
+    /* Match numbers, including decimals, hex, and binary */
     #[regex(r"[0-9]+(\.[0-9]+)?", |lex| lex.slice().parse::<f64>().ok())]
+    #[regex(r"0x[0-9a-fA-F]+", |lex| i64::from_str_radix(&lex.slice()[2..], 16).map(|i| i as f64).ok())]
+    #[regex(r"0b[01]+", |lex| i64::from_str_radix(&lex.slice()[2..], 2).map(|i| i as f64).ok())]
     Number(f64),
 
     /* Match variable names or function identifiers */

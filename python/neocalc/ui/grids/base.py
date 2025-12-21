@@ -69,3 +69,15 @@ class CalculatorGrid(Gtk.Grid):
     def on_func_clicked(self, button):
         """Handle scientific function clicks."""
         self.calculator.insert_at_cursor(button.get_label())
+
+    def on_convert_clicked(self, button):
+        """Handle base conversion."""
+        label = button.get_label()
+        new_val = None
+        if label == "Hex":
+            new_val = self.calculator.logic.convert_to_hex()
+        elif label == "Bin":
+            new_val = self.calculator.logic.convert_to_bin()
+        
+        if new_val:
+            self.calculator.display.set_value(new_val)

@@ -150,4 +150,29 @@ impl Calculator {
         h.clear();
         Ok(())
     }
+
+    fn convert_to_hex(&self) -> PyResult<String> {
+        let buffer = lock_mutex(&self.input_buffer)?;
+        /* Try to parse the current buffer as an integer */
+        /* Note: This is simple parsing; for robust behavior we might want to evaluate first if it's an expression */
+        /* But for now let's assume the user hits 'Hex' after '=', so buffer is a number */
+        
+        /* If it's a raw number */
+        if let Ok(val) = buffer.parse::<f64>() {
+            let int_val = val as i64;
+            return Ok(format!("0x{:X}", int_val));
+        }
+
+        /* If unsuccessful, just return buffer (maybe it's already hex or error) */
+        Ok(buffer.clone())
+    }
+
+    fn convert_to_bin(&self) -> PyResult<String> {
+        let buffer = lock_mutex(&self.input_buffer)?;
+        if let Ok(val) = buffer.parse::<f64>() {
+            let int_val = val as i64;
+            return Ok(format!("0b{:b}", int_val));
+        }
+        Ok(buffer.clone())
+    }
 }

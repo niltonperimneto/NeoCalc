@@ -6,6 +6,9 @@ from gi.repository import Adw, Gtk, GLib
 
 from ..grids.scientific import ScientificGrid
 from ..grids.standard import ButtonGrid
+from ..grids.programming import ProgrammingGrid
+from ..grids.financial import FinancialGrid
+
 from ...core.backend import CalculatorLogic
 
 from ..components.display import CalculatorDisplay
@@ -53,6 +56,14 @@ class CalculatorWidget(Gtk.Box):
         self.view_stack.get_page(scientific_grid).set_icon_name(
             "applications-science-symbolic"
         )
+
+        programming_grid = ProgrammingGrid(self)
+        self.view_stack.add_titled(programming_grid, "programming", "Programming")
+        self.view_stack.get_page(programming_grid).set_icon_name("applications-engineering-symbolic")
+
+        financial_grid = FinancialGrid(self)
+        self.view_stack.add_titled(financial_grid, "financial", "Financial")
+        self.view_stack.get_page(financial_grid).set_icon_name("money-symbolic")
 
         grid_box.append(self.view_stack)
 
@@ -160,7 +171,7 @@ class CalculatorWidget(Gtk.Box):
         from gi.repository import Gdk
 
         key_char = Gdk.keyval_to_unicode(keyval)
-        valid_chars = "0123456789.+-*/^%()"
+        valid_chars = "0123456789.+-*/^%()abcdefABCDEFxb"
 
         if key_char:
             char = chr(key_char)

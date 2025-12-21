@@ -150,10 +150,21 @@ class Calculator(Adw.ApplicationWindow):
         if page and hasattr(page, 'calc_widget'):
             calc_widget = page.calc_widget
             if hasattr(calc_widget, 'get_stack'):
+<<<<<<< HEAD
                 calc_widget.get_stack().set_visible_child_name(mode_id)
         
         ## Update header display
         self.header_view.set_mode_display(mode_id)
+=======
+                if idx == 0:
+                    calc_widget.get_stack().set_visible_child_name('standard')
+                elif idx == 1:
+                    calc_widget.get_stack().set_visible_child_name('scientific')
+                elif idx == 2:
+                    calc_widget.get_stack().set_visible_child_name('programming')
+                elif idx == 3:
+                     calc_widget.get_stack().set_visible_child_name('financial')
+>>>>>>> 338bcce (feat: Add Programming and Financial calculator modes, implement new financial and bitwise functions, and update UI grids and keyboard input.)
 
     def on_switch_scientific(self, action, param):
         self.apply_mode("scientific")
