@@ -75,5 +75,4 @@ class HeaderView(Adw.Bin):
         menu_btn.add_css_class("header-btn")
         self.header_bar.pack_end(menu_btn)
 
-    def set_selected_type(self, index):
-        self.type_dropdown.set_selected(index)
+

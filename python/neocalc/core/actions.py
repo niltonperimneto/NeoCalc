@@ -74,10 +74,10 @@ class ActionRegistry:
         self.window.tab_view.connect("close-page", self.window.calc_manager.on_close_calculator_clicked)
 
     def on_switch_scientific(self, action, param):
-        self.window.header_view.set_selected_type(1)
+        self.window.apply_mode("scientific")
 
     def on_switch_standard(self, action, param):
-        self.window.header_view.set_selected_type(0)
+        self.window.apply_mode("standard")
 
     def on_switch_calculator(self, action, param, calc_number):
         ## Switch to the Nth calculator tab if it exists
