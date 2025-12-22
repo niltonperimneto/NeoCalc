@@ -17,11 +17,7 @@ class ProgrammingGrid(CalculatorGrid):
             GridButton("(", self.on_button_clicked, 0, 0),
             GridButton(")", self.on_button_clicked, 1, 0),
             GridButton("bnot", self.on_func_clicked, 2, 0, insert_text="bnot("),
-            GridButton("mod", self.on_button_clicked, 3, 0), # Is mod operator % or func? Python % is operator. Engine % is operator. 
-            # If backend supports %, then button should be "%". If logic.convert_to... logic?
-            # mod usually implies %. Let's assume on_button_clicked with label "mod" inserts "mod". Does parser support "mod"?
-            # Parser supports "%". Button label "mod". Engine likely doesn't support "mod" operator string.
-            # I should use insert_text="%".
+            GridButton("mod", self.on_button_clicked, 3, 0, insert_text="%"),
             
             GridButton("C", self.on_clear_clicked, 4, 0, style_classes=["destructive-action", "destructive"]),
             GridButton("÷", self.on_button_clicked, 5, 0),

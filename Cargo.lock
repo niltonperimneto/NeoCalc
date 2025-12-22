@@ -316,6 +316,7 @@ dependencies = [
  "num-bigint",
  "num-rational",
  "num-traits",
+ "once_cell",
  "pyo3",
  "pyo3-async-runtimes",
  "tokio",

@@ -9,25 +9,26 @@ from .base import CalculatorGrid
 class ButtonGrid(CalculatorGrid):
     def __init__(self, calculator_window):
         super().__init__(calculator_window)
-        self.set_row_homogeneous(False)
-        self.set_column_homogeneous(False)
+        self.set_row_homogeneous(True)
+        self.set_column_homogeneous(True)
 
         from .base import GridButton
 
         buttons = [
             GridButton("C", self.on_clear_clicked, 0, 0, style_classes=["destructive-action", "destructive"]),
-            GridButton("÷", self.on_button_clicked, 1, 0),
-            GridButton("×", self.on_button_clicked, 2, 0),
-            GridButton("−", self.on_button_clicked, 3, 0),
+            GridButton("⌫", self.on_button_clicked, 1, 0, style_classes=["destructive-action", "destructive"]),
+            GridButton("÷", self.on_button_clicked, 2, 0),
+            GridButton("×", self.on_button_clicked, 3, 0),
 
             GridButton("7", self.on_button_clicked, 0, 1),
             GridButton("8", self.on_button_clicked, 1, 1),
             GridButton("9", self.on_button_clicked, 2, 1),
-            GridButton("+", self.on_button_clicked, 3, 1, height=2),
+            GridButton("−", self.on_button_clicked, 3, 1),
 
             GridButton("4", self.on_button_clicked, 0, 2),
             GridButton("5", self.on_button_clicked, 1, 2),
             GridButton("6", self.on_button_clicked, 2, 2),
+            GridButton("+", self.on_button_clicked, 3, 2),
 
             GridButton("1", self.on_button_clicked, 0, 3),
             GridButton("2", self.on_button_clicked, 1, 3),

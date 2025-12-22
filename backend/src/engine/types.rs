@@ -5,6 +5,8 @@ use num::{ToPrimitive, Zero, One};
 use num::traits::Pow;
 use std::ops::{Add, Sub, Mul, Div, Neg, Rem};
 
+pub type Context = std::collections::HashMap<String, Number>;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Number {
     Integer(BigInt),

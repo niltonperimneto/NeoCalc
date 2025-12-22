@@ -18,16 +18,11 @@ class ScientificGrid(CalculatorGrid):
             GridButton("(", self.on_button_clicked, 0, 0),
             GridButton(")", self.on_button_clicked, 1, 0),
             GridButton("π", self.on_button_clicked, 2, 0),
-            GridButton("im", self.on_func_clicked, 3, 0), # 'im' is for complex numbers, treated as unit 'i'? No, i is separate. im(z) returns imaginary part. So it needs (.
-            # Wait, line 21 says GridButton("im", self.on_func_clicked, 3, 0)
-            # If "im" is a function, it needs "im(". If it's the constant 'i', it's redundant with line 30 "i".
-            # backend/src/engine/functions/mod.rs: "im" | "lm" => ... complex_ops::im.
-            # So it IS a function.
             GridButton("im", self.on_func_clicked, 3, 0, insert_text="im("),
             GridButton("C", self.on_clear_clicked, 4, 0, style_classes=["destructive-action", "destructive"]),
             GridButton("÷", self.on_button_clicked, 5, 0),
             GridButton("×", self.on_button_clicked, 6, 0),
-            GridButton("−", self.on_button_clicked, 7, 0),
+            GridButton("⌫", self.on_button_clicked, 7, 0, style_classes=["destructive-action", "destructive"]),
 
             GridButton("sin", self.on_func_clicked, 0, 1, insert_text="sin("),
             GridButton("cos", self.on_func_clicked, 1, 1, insert_text="cos("),
@@ -36,7 +31,7 @@ class ScientificGrid(CalculatorGrid):
             GridButton("7", self.on_button_clicked, 4, 1),
             GridButton("8", self.on_button_clicked, 5, 1),
             GridButton("9", self.on_button_clicked, 6, 1),
-            GridButton("+", self.on_button_clicked, 7, 1, height=2),
+            GridButton("−", self.on_button_clicked, 7, 1),
 
             GridButton("asin", self.on_func_clicked, 0, 2, insert_text="asin("),
             GridButton("acos", self.on_func_clicked, 1, 2, insert_text="acos("),
@@ -45,6 +40,7 @@ class ScientificGrid(CalculatorGrid):
             GridButton("4", self.on_button_clicked, 4, 2),
             GridButton("5", self.on_button_clicked, 5, 2),
             GridButton("6", self.on_button_clicked, 6, 2),
+            GridButton("+", self.on_button_clicked, 7, 2),
 
             GridButton("sinh", self.on_func_clicked, 0, 3, insert_text="sinh("),
             GridButton("cosh", self.on_func_clicked, 1, 3, insert_text="cosh("),

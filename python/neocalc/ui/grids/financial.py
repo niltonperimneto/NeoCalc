@@ -19,7 +19,7 @@ class FinancialGrid(CalculatorGrid):
             GridButton("(", self.on_button_clicked, 0, 0),
             GridButton(")", self.on_button_clicked, 1, 0),
             GridButton("%", self.on_button_clicked, 2, 0),
-            # CF is removed as per instruction comments.
+            GridButton("^", self.on_button_clicked, 3, 0),
             
             GridButton("C", self.on_clear_clicked, 4, 0, style_classes=["destructive-action", "destructive"]),
             GridButton("÷", self.on_button_clicked, 5, 0),
@@ -40,7 +40,7 @@ class FinancialGrid(CalculatorGrid):
             GridButton("rate", self.on_func_clicked, 0, 2, insert_text="rate("),
             GridButton("npv", self.on_func_clicked, 1, 2, insert_text="npv("),
             GridButton("irr", self.on_func_clicked, 2, 2, insert_text="irr("),
-            # Col 3 Row 2 was "db" placeholder. Removing it as not implemented.
+            GridButton("√", self.on_func_clicked, 3, 2, insert_text="sqrt("),
             
             GridButton("4", self.on_button_clicked, 4, 2),
             GridButton("5", self.on_button_clicked, 5, 2),
@@ -48,14 +48,22 @@ class FinancialGrid(CalculatorGrid):
             GridButton("+", self.on_button_clicked, 7, 2),
 
             # Row 3
-            # Col 0-3 Row 3 empty
+            GridButton("ln", self.on_func_clicked, 0, 3, insert_text="ln("),
+            GridButton("log", self.on_func_clicked, 1, 3, insert_text="log("),
+            GridButton("e", self.on_button_clicked, 2, 3),
+            GridButton("abs", self.on_func_clicked, 3, 3, insert_text="abs("),
+            
             GridButton("1", self.on_button_clicked, 4, 3),
             GridButton("2", self.on_button_clicked, 5, 3),
             GridButton("3", self.on_button_clicked, 6, 3),
             GridButton("=", self.on_equal_clicked, 7, 3, height=2, style_classes=["suggested-action", "accent"]),
 
             # Row 4
-            # Col 0-3 Row 4 empty
+            GridButton("mean", self.on_func_clicked, 0, 4, insert_text="mean("),
+            GridButton("std", self.on_func_clicked, 1, 4, insert_text="std("),
+            GridButton("var", self.on_func_clicked, 2, 4, insert_text="var("),
+            GridButton("median", self.on_func_clicked, 3, 4, insert_text="median("),
+            
             GridButton("0", self.on_button_clicked, 4, 4, width=2),
             GridButton(".", self.on_button_clicked, 6, 4),
         ]

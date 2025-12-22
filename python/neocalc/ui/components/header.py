@@ -61,19 +61,7 @@ class HeaderView(Adw.Bin):
     def setup_menu(self):
         menu_model = Gio.Menu()
 
-        themes_menu = Gio.Menu()
-
-        themes_menu.append(_("Default"), "win.set_theme('default')")
-
-        for theme_name in StyleManager.get_available_themes():
-
-            display_name = theme_name.replace("_", " ").title()
-            themes_menu.append(display_name, f"win.set_theme('{theme_name}')")
-
-        themes_menu.append(_("Import Theme..."), "win.import_theme")
-
-        menu_model.append_submenu(_("Themes"), themes_menu)
-
+        menu_model.append(_("Preferences"), "win.show_preferences")
         menu_model.append(_("Keyboard Shortcuts"), "win.show_shortcuts")
         menu_model.append(_("About"), "win.about")
 
@@ -82,5 +70,85 @@ class HeaderView(Adw.Bin):
         menu_btn.set_menu_model(menu_model)
         menu_btn.add_css_class("header-btn")
         self.header_bar.pack_end(menu_btn)
+
+        self.setup_variables_button()
+
+    def setup_variables_button(self):
+        self.vars_popover = Gtk.Popover()
+        self.vars_list = Gtk.ListBox()
+        self.vars_list.set_selection_mode(Gtk.SelectionMode.NONE)
+        self.vars_list.add_css_class("rich-list")
+        
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_min_content_height(150)
+        scroll.set_min_content_width(200)
+        scroll.set_child(self.vars_list)
+        
+        self.vars_popover.set_child(scroll)
+        self.vars_popover.connect("notify::visible", self.on_popover_visibility_changed)
+        
+        vars_btn = Gtk.MenuButton(icon_name="x-office-spreadsheet-symbolic")
+        vars_btn.set_tooltip_text(_("Variables"))
+        vars_btn.set_popover(self.vars_popover)
+        vars_btn.add_css_class("header-btn")
+        
+        self.header_bar.pack_end(vars_btn)
+
+    def on_popover_visibility_changed(self, popover, param):
+        if popover.get_visible():
+            self.refresh_variables()
+
+    def refresh_variables(self):
+        """Populate variables list."""
+        ## Clear list
+        while True:
+            child = self.vars_list.get_first_child()
+            if not child: break
+            self.vars_list.remove(child)
+
+        ## Get active calculator
+        page = self.main_window.tab_view.get_selected_page()
+        if not page or not hasattr(page, 'calc_widget'):
+            self._add_placeholder(_("No active calculator"))
+            return
+
+        calc_widget = page.calc_widget
+        variables = calc_widget.get_variables()
+
+        if not variables:
+            self._add_placeholder(_("No variables defined"))
+            return
+
+        for name, value in sorted(variables.items()):
+            row = Gtk.ListBoxRow()
+            box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+            box.set_margin_start(12)
+            box.set_margin_end(12)
+            box.set_margin_top(8)
+            box.set_margin_bottom(8)
+
+            name_lbl = Gtk.Label(label=name)
+            name_lbl.add_css_class("heading")
+            name_lbl.set_hexpand(True)
+            name_lbl.set_xalign(0)
+
+            val_lbl = Gtk.Label(label=value)
+            val_lbl.add_css_class("dim-label")
+            val_lbl.set_xalign(1)
+
+            box.append(name_lbl)
+            box.append(val_lbl)
+            row.set_child(box)
+            self.vars_list.append(row)
+
+    def _add_placeholder(self, text):
+        row = Gtk.ListBoxRow()
+        lbl = Gtk.Label(label=text)
+        lbl.set_margin_top(12)
+        lbl.set_margin_bottom(12)
+        lbl.add_css_class("dim-label")
+        row.set_child(lbl)
+        self.vars_list.append(row)
 
 

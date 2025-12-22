@@ -2,7 +2,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 gi.require_version('Rsvg', '2.0')
-from gi.repository import Adw, Gio
+from gi.repository import Adw, Gio, Gtk, Gdk
 import os
 import sys
 
@@ -31,10 +31,15 @@ class CalculatorApp(Adw.Application):
         ## Initialize the Adwaita application
         ## application_id must be unique and match the desktop file
 
-        super().__init__(application_id="com.nilton.calculator",
+        super().__init__(application_id="com.nilton.neocalc",
                          flags=Gio.ApplicationFlags.NON_UNIQUE)
 
     def do_activate(self):
+        ## Add resources directory to icon theme search path
+        icon_theme = Gtk.IconTheme.get_for_display(Gdk.Display.get_default())
+        resource_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
+        icon_theme.add_search_path(resource_dir)
+
         ## On activation, create and present the main window
         Calculator(self).present()
 

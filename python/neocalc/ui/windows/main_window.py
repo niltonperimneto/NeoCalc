@@ -11,13 +11,14 @@ from ...core.actions import ActionRegistry
 from ..components.sidebar import SidebarView
 from ..components.header import HeaderView
 from ...core.backend import DisplayManager, CalculatorManager
+from ..dialogs.preferences import PreferencesDialog
 
 class Calculator(Adw.ApplicationWindow):
     def __init__(self, app):
         super().__init__(application=app)
         self.set_title("NeoCalc")
-        self.set_default_size(320, 540)
-        self.set_size_request(300, 500)
+        self.set_default_size(450, 600)
+        self.set_size_request(430, 500)
         self.set_resizable(True)
 
         ## Initialize registry for handling user actions and shortcuts
@@ -92,7 +93,7 @@ class Calculator(Adw.ApplicationWindow):
         self.tab_view = Adw.TabView()
         ## Tab view should not expand vertically here as it's just the container logic
         ## But practically, this holds the keypad widget which is in the page content
-        self.tab_view.set_vexpand(False)
+        self.tab_view.set_vexpand(True)
         self.tab_view.set_hexpand(True)
         content_box.append(self.tab_view)
 
@@ -128,6 +129,48 @@ class Calculator(Adw.ApplicationWindow):
         action = Gio.SimpleAction.new("set_mode", GLib.VariantType.new("s"))
         action.connect("activate", self.on_set_mode_action)
         self.add_action(action)
+        
+        pref_action = Gio.SimpleAction.new("show_preferences", None)
+        pref_action.connect("activate", self.show_preferences)
+        self.add_action(pref_action)
+        
+        about_action = Gio.SimpleAction.new("about", None)
+        about_action.connect("activate", self.about)
+        self.add_action(about_action)
+
+        theme_action = Gio.SimpleAction.new("set_theme", GLib.VariantType.new("s"))
+        theme_action.connect("activate", self.on_set_theme_action)
+        self.add_action(theme_action)
+
+        import_action = Gio.SimpleAction.new("import_theme", None)
+        import_action.connect("activate", self.import_theme)
+        self.add_action(import_action)
+
+        shortcuts_action = Gio.SimpleAction.new("show_shortcuts", None)
+        shortcuts_action.connect("activate", self.show_shortcuts)
+        self.add_action(shortcuts_action)
+
+    def show_preferences(self, action, param):
+        dialog = PreferencesDialog(self)
+        dialog.present()
+
+    def about(self, action, param):
+        present_about_dialog(self)
+
+    def show_shortcuts(self, action, param):
+        from ..dialogs.shortcuts import show_shortcuts_dialog
+        show_shortcuts_dialog(self)
+
+    def on_set_theme_action(self, action, param):
+        theme_id = param.get_string()
+        self.set_theme(theme_id)
+
+    def set_theme(self, theme_id):
+        StyleManager.apply_theme(theme_id)
+
+    def import_theme(self, action, param):
+        ## TODO: Implement file chooser
+        pass
 
     def on_set_mode_action(self, action, param):
         mode_id = param.get_string()

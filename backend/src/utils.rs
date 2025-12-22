@@ -3,7 +3,16 @@ use pyo3::prelude::*;
 use pyo3::exceptions::PyRuntimeError;
 use num::complex::Complex64;
 
+use once_cell::sync::Lazy;
+
 pub const EPSILON: f64 = 1e-10;
+
+pub static RUNTIME: Lazy<tokio::runtime::Runtime> = Lazy::new(|| {
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .expect("Failed to create Tokio runtime")
+});
 
 /// Helper to lock a mutex and map poison errors to PyRuntimeError
 pub fn lock_mutex<T>(mutex: &Mutex<T>) -> PyResult<MutexGuard<'_, T>> {

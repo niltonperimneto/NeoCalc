@@ -19,7 +19,6 @@ class CalculatorWidget(Gtk.Box):
 
         self.parent_window = None
         self.logic = CalculatorLogic()
-        self.preview_logic = CalculatorLogic()
 
         self.on_expression_changed = None
         GLib.idle_add(self.update_display)
@@ -129,14 +128,23 @@ class CalculatorWidget(Gtk.Box):
                 self.display.set_preview("")
                 return
 
-            result = self.preview_logic.evaluate(text)
+            # Use the new preview method from the backend which respects variables
+            result = self.logic.preview(text)
+            
             # If result is same as input (no calc happened), hide it
-            if result == text or result == "Error":
+            if result == text or result == "Error" or not result:
                  self.display.set_preview("")
             else:
                  self.display.set_preview(result)
         except Exception:
             self.display.set_preview("")
+
+    def get_variables(self):
+        """Retrieve defined variables from the backend."""
+        try:
+            return self.logic.get_variables()
+        except Exception:
+            return {}
 
     def on_display_edited(self, widget, text):
         self.logic.set_expression(text)
