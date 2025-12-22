@@ -1,5 +1,5 @@
 use crate::engine::types::Number;
-use num::{Zero, ToPrimitive};
+use num::Zero;
 use num_bigint::BigInt;
 
 pub fn mean(args: &[Number]) -> Result<Number, String> {

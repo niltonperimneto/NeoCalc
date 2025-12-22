@@ -13,6 +13,7 @@ class GridButton:
     width: int = 1
     height: int = 1
     style_classes: List[str] = field(default_factory=list)
+    insert_text: Optional[str] = None
 
 class CalculatorGrid(Gtk.Grid):
     """Base class for calculator grids handling common button actions."""
@@ -26,6 +27,10 @@ class CalculatorGrid(Gtk.Grid):
         for btn_def in buttons:
             button = Gtk.Button(label=btn_def.label)
             button.set_focusable(False)
+            
+            # Store insert_text on the button widget for callbacks to use
+            button.insert_text = btn_def.insert_text if btn_def.insert_text else btn_def.label
+            
             button.connect("clicked", btn_def.callback)
             
             self._apply_button_styles(button, btn_def)
@@ -36,6 +41,11 @@ class CalculatorGrid(Gtk.Grid):
     def _apply_button_styles(self, button, btn_def: GridButton):
         """Applies CSS classes based on button definition."""
         button.add_css_class("calc-grid-button")
+        
+        # Auto-apply numeric style for digits if not specified? 
+        # Standard HIG: Action buttons vs Content buttons.
+        # But let's trust explicit classes first.
+        
         for style in btn_def.style_classes:
             button.add_css_class(style)
 
@@ -68,7 +78,8 @@ class CalculatorGrid(Gtk.Grid):
 
     def on_func_clicked(self, button):
         """Handle scientific function clicks."""
-        self.calculator.insert_at_cursor(button.get_label())
+        text = getattr(button, "insert_text", button.get_label())
+        self.calculator.insert_at_cursor(text)
 
     def on_convert_clicked(self, button):
         """Handle base conversion."""

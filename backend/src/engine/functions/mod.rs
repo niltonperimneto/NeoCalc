@@ -76,6 +76,11 @@ pub fn apply(name: &str, args: Vec<Number>) -> Result<Number, String> {
         /* Financial (Complex) */
         "fv" => Ok(Number::Complex(financial::fv(&to_complex_args(&args))?)),
         "pv" => Ok(Number::Complex(financial::pv(&to_complex_args(&args))?)),
+        "pmt" => Ok(Number::Complex(financial::pmt(&to_complex_args(&args))?)),
+        "nper" => Ok(Number::Complex(financial::nper(&to_complex_args(&args))?)),
+        "rate" => Ok(Number::Complex(financial::rate(&to_complex_args(&args))?)),
+        "npv" => Ok(Number::Complex(financial::npv(&to_complex_args(&args))?)),
+        "irr" => Ok(Number::Complex(financial::irr(&to_complex_args(&args))?)),
 
         _ => Err(format!("'{}' is not a known function.", name)),
     }
