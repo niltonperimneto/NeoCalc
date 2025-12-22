@@ -21,6 +21,7 @@ class CalculatorWidget(Gtk.Box):
         self.logic = CalculatorLogic()
         self.preview_logic = CalculatorLogic()
 
+        self.on_expression_changed = None
         GLib.idle_add(self.update_display)
 
         key_controller = Gtk.EventControllerKey()

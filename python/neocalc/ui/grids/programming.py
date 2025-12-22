@@ -4,7 +4,7 @@ gi.require_version("Gtk", "4.0")
 
 from gi.repository import Gtk
 
-from .base import CalculatorGrid
+from .base import CalculatorGrid, GridButton
 
 class ProgrammingGrid(CalculatorGrid):
     def __init__(self, calculator_window):
@@ -77,4 +77,18 @@ class ProgrammingGrid(CalculatorGrid):
         # Filter out None callbacks
         buttons_info = [b for b in buttons_info if b[1] is not None]
 
-        self.create_buttons(buttons_info)
+        # Convert tuples to GridButton objects
+        buttons = [
+            GridButton(
+                label=b[0],
+                callback=b[1],
+                col=b[2],
+                row=b[3],
+                width=b[4],
+                height=b[5],
+                style_classes=["numeric"] if b[0].isdigit() else ["function"]
+            )
+            for b in buttons_info
+        ]
+
+        self.create_buttons(buttons)
