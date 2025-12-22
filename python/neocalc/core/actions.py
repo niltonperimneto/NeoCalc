@@ -18,6 +18,8 @@ class ActionRegistry:
             ("show_shortcuts", self.on_show_shortcuts, ["<Control>h"]),
             ("switch_scientific", self.on_switch_scientific, ["<Control>s"]),
             ("switch_standard", self.on_switch_standard, ["<Control>r"]),
+            ("switch_programming", self.on_switch_programming, ["<Control>p"]),
+            ("switch_financial", self.on_switch_financial, ["<Control>f"]),
         ]
 
         ## Register each action with the window and set accelerators if app is present
@@ -78,6 +80,12 @@ class ActionRegistry:
 
     def on_switch_standard(self, action, param):
         self.window.apply_mode("standard")
+
+    def on_switch_programming(self, action, param):
+        self.window.apply_mode("programming")
+
+    def on_switch_financial(self, action, param):
+        self.window.apply_mode("financial")
 
     def on_switch_calculator(self, action, param, calc_number):
         ## Switch to the Nth calculator tab if it exists

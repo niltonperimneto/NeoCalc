@@ -32,6 +32,8 @@ class HeaderView(Adw.Bin):
         menu_model = Gio.Menu()
         menu_model.append(_("Standard"), "win.set_mode('standard')")
         menu_model.append(_("Scientific"), "win.set_mode('scientific')")
+        menu_model.append(_("Programming"), "win.set_mode('programming')")
+        menu_model.append(_("Financial"), "win.set_mode('financial')")
 
         self.split_button = Adw.SplitButton(label=_("Standard Mode"))
         self.split_button.set_icon_name("view-grid-symbolic")
@@ -49,6 +51,12 @@ class HeaderView(Adw.Bin):
         elif mode_id == "scientific":
             self.split_button.set_label(_("Scientific Mode"))
             self.split_button.set_icon_name("applications-science-symbolic")
+        elif mode_id == "programming":
+            self.split_button.set_label(_("Programming Mode"))
+            self.split_button.set_icon_name("applications-engineering-symbolic")
+        elif mode_id == "financial":
+            self.split_button.set_label(_("Financial Mode"))
+            self.split_button.set_icon_name("money-symbolic")
 
     def setup_menu(self):
         menu_model = Gio.Menu()
