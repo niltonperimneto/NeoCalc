@@ -1,8 +1,11 @@
 import gi
+
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk
 from dataclasses import dataclass, field
 from typing import Callable, List, Optional
+
+from gi.repository import Gtk
+
 
 @dataclass
 class GridButton:
@@ -14,6 +17,7 @@ class GridButton:
     height: int = 1
     style_classes: List[str] = field(default_factory=list)
     insert_text: Optional[str] = None
+
 
 class CalculatorGrid(Gtk.Grid):
     """Base class for calculator grids handling common button actions."""
@@ -27,12 +31,14 @@ class CalculatorGrid(Gtk.Grid):
         for btn_def in buttons:
             button = Gtk.Button(label=btn_def.label)
             button.set_focusable(False)
-            
+
             # Store insert_text on the button widget for callbacks to use
-            button.insert_text = btn_def.insert_text if btn_def.insert_text else btn_def.label
-            
+            button.insert_text = (
+                btn_def.insert_text if btn_def.insert_text else btn_def.label
+            )
+
             button.connect("clicked", btn_def.callback)
-            
+
             self._apply_button_styles(button, btn_def)
             self._apply_button_layout(button)
 
@@ -41,11 +47,11 @@ class CalculatorGrid(Gtk.Grid):
     def _apply_button_styles(self, button, btn_def: GridButton):
         """Applies CSS classes based on button definition."""
         button.add_css_class("calc-grid-button")
-        
-        # Auto-apply numeric style for digits if not specified? 
+
+        # Auto-apply numeric style for digits if not specified?
         # Standard HIG: Action buttons vs Content buttons.
         # But let's trust explicit classes first.
-        
+
         for style in btn_def.style_classes:
             button.add_css_class(style)
 
@@ -61,20 +67,25 @@ class CalculatorGrid(Gtk.Grid):
     def on_equal_clicked(self, button):
         """Handle evaluation."""
         if self.calculator.logic:
-             self.calculator.logic.evaluate()
-             self.calculator.update_display()
+            self.calculator.logic.evaluate()
+            self.calculator.update_display()
 
-        if hasattr(self.calculator, 'update_history_display'):
+        if hasattr(self.calculator, "update_history_display"):
             self.calculator.update_history_display()
 
-        if hasattr(self.calculator, 'trigger_name_update'):
+        if hasattr(self.calculator, "trigger_name_update"):
             self.calculator.trigger_name_update()
 
     def on_clear_clicked(self, button):
         """Handle clear action."""
         if self.calculator.logic:
-             self.calculator.logic.clear()
-             self.calculator.update_display()
+            self.calculator.logic.clear()
+            self.calculator.update_display()
+
+    def on_backspace_clicked(self, button):
+        """Handle backspace action."""
+        if hasattr(self.calculator, "backspace_at_cursor"):
+            self.calculator.backspace_at_cursor()
 
     def on_func_clicked(self, button):
         """Handle scientific function clicks."""
@@ -89,6 +100,6 @@ class CalculatorGrid(Gtk.Grid):
             new_val = self.calculator.logic.convert_to_hex()
         elif label == "Bin":
             new_val = self.calculator.logic.convert_to_bin()
-        
+
         if new_val:
             self.calculator.display.set_value(new_val)

@@ -133,7 +133,18 @@ class CalculatorDisplay(Gtk.Box):
         current_text = self.display_entry.get_text()
         pos = self.display_entry.get_position()
 
-        start, end = self.display_entry.get_selection_bounds()
+        bounds = self.display_entry.get_selection_bounds()
+        if bounds and len(bounds) >= 2:
+             # handle (bool, start, end) or (start, end)
+             if len(bounds) == 3:
+                 has_selection, start, end = bounds
+                 if not has_selection:
+                     start, end = pos, pos
+             else:
+                 start, end = bounds
+        else:
+             start, end = pos, pos
+
         new_text = current_text
         new_pos = pos
 

@@ -1,12 +1,27 @@
+use crate::engine::types::Number;
+use crate::engine::errors::EngineError;
+use crate::engine::functions::FunctionDef;
 use num::complex::Complex64;
 
-pub fn log(c: Complex64) -> Result<Complex64, String> { Ok(c.log(10.0)) }
-pub fn ln(c: Complex64) -> Result<Complex64, String> { Ok(c.ln()) }
-pub fn sqrt(c: Complex64) -> Result<Complex64, String> {
-
-    if c.im == 0.0 && c.re < 0.0 {
-        Ok(Complex64::new(c.re, 0.0).sqrt())
-    } else {
-        Ok(c.sqrt())
+fn one_arg(args: &[Number], name: &str) -> Result<Complex64, EngineError> {
+    if args.len() != 1 {
+        return Err(EngineError::ArgumentMismatch(name.into(), 1));
     }
+    Ok(args[0].to_complex())
 }
+
+pub fn log(args: &[Number]) -> Result<Number, EngineError> {
+    Ok(Number::Complex(one_arg(args, "log")?.log(10.0)))
+}
+
+pub fn ln(args: &[Number]) -> Result<Number, EngineError> {
+    Ok(Number::Complex(one_arg(args, "ln")?.ln()))
+}
+
+pub fn sqrt(args: &[Number]) -> Result<Number, EngineError> {
+    Ok(Number::Complex(one_arg(args, "sqrt")?.sqrt()))
+}
+
+inventory::submit! { FunctionDef { name: "log", func: log } }
+inventory::submit! { FunctionDef { name: "ln", func: ln } }
+inventory::submit! { FunctionDef { name: "sqrt", func: sqrt } }

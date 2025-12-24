@@ -1,13 +1,12 @@
+use gettextrs::*;
+use neocalc_backend::neocalc_backend;
 use pyo3::prelude::*;
 use pyo3::types::PyList;
 use std::env;
 use std::path::PathBuf;
-use neocalc_backend::neocalc_backend;
-use gettextrs::*;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> PyResult<()> {
-
     /* Initialize localization support (gettext) */
     setlocale(LocaleCategory::LcAll, "");
     bindtextdomain("neocalc", "locale").expect("Failed to bind text domain");
@@ -62,9 +61,9 @@ async fn main() -> PyResult<()> {
         }
 
         let gui_dir = found_path.ok_or_else(|| {
-            PyErr::new::<pyo3::exceptions::PyFileNotFoundError, _>(
-                gettext("Could not find 'python' directory. It's gone. Reduced to atoms.")
-            )
+            PyErr::new::<pyo3::exceptions::PyFileNotFoundError, _>(gettext(
+                "Could not find 'python' directory. It's gone. Reduced to atoms.",
+            ))
         })?;
 
         /* Add the found directory to Python path */
@@ -72,10 +71,10 @@ async fn main() -> PyResult<()> {
 
         /* Import the Python application entry point */
         let app_module = py.import("neocalc.app").map_err(|e| {
-             PyErr::new::<pyo3::exceptions::PyImportError, _>(
-                format!("Failed to import 'neocalc.app'. \nPath value: {:?} \nError: {}",
-                    gui_dir, e)
-            )
+            PyErr::new::<pyo3::exceptions::PyImportError, _>(format!(
+                "Failed to import 'neocalc.app'. \nPath value: {:?} \nError: {}",
+                gui_dir, e
+            ))
         })?;
 
         /* Start the application */

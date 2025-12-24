@@ -1,9 +1,16 @@
-pub mod parser;
+pub mod ast;
+pub mod errors;
 pub mod functions;
-
+pub mod parser;
+pub mod tokens;
 pub mod types;
-use types::Number;
 
-pub fn evaluate(expression: &str, context: &mut types::Context) -> Result<Number, String> {
-    parser::evaluate(expression, context)
+use crate::engine::errors::EngineError;
+use crate::engine::types::Number;
+
+use crate::engine::ast::Context;
+
+pub fn evaluate(expression: &str, context: &mut Context) -> Result<Number, EngineError> {
+    let expr = parser::parse(expression)?;
+    expr.eval(context)
 }

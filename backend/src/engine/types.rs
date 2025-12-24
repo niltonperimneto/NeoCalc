@@ -1,11 +1,11 @@
 use num::complex::Complex64;
+use num::traits::Pow;
+use num::{One, ToPrimitive, Zero};
 use num_bigint::BigInt;
 use num_rational::BigRational;
-use num::{ToPrimitive, Zero, One};
-use num::traits::Pow;
-use std::ops::{Add, Sub, Mul, Div, Neg, Rem};
+use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
 
-pub type Context = std::collections::HashMap<String, Number>;
+
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Number {
@@ -30,7 +30,13 @@ impl Number {
             Number::Integer(i) => i.to_f64(),
             Number::Rational(r) => r.to_f64(),
             Number::Float(f) => Some(*f),
-            Number::Complex(c) => if c.im == 0.0 { Some(c.re) } else { None },
+            Number::Complex(c) => {
+                if c.im == 0.0 {
+                    Some(c.re)
+                } else {
+                    None
+                }
+            }
         }
     }
 }
@@ -40,15 +46,27 @@ impl Number {
 fn promote(lhs: Number, rhs: Number) -> (Number, Number) {
     match (lhs, rhs) {
         (Number::Integer(l), Number::Integer(r)) => (Number::Integer(l), Number::Integer(r)),
-        
+
         // Integer vs Rational -> Rational
-        (Number::Integer(l), Number::Rational(r)) => (Number::Rational(BigRational::from_integer(l)), Number::Rational(r)),
-        (Number::Rational(l), Number::Integer(r)) => (Number::Rational(l), Number::Rational(BigRational::from_integer(r))),
+        (Number::Integer(l), Number::Rational(r)) => (
+            Number::Rational(BigRational::from_integer(l)),
+            Number::Rational(r),
+        ),
+        (Number::Rational(l), Number::Integer(r)) => (
+            Number::Rational(l),
+            Number::Rational(BigRational::from_integer(r)),
+        ),
         (Number::Rational(l), Number::Rational(r)) => (Number::Rational(l), Number::Rational(r)),
 
         // Anything vs Float -> Float (Note: Rational -> Float loses precision)
-        (Number::Float(l), r) => (Number::Float(l), Number::Float(r.to_f64().unwrap_or(f64::NAN))),
-        (l, Number::Float(r)) => (Number::Float(l.to_f64().unwrap_or(f64::NAN)), Number::Float(r)),
+        (Number::Float(l), r) => (
+            Number::Float(l),
+            Number::Float(r.to_f64().unwrap_or(f64::NAN)),
+        ),
+        (l, Number::Float(r)) => (
+            Number::Float(l.to_f64().unwrap_or(f64::NAN)),
+            Number::Float(r),
+        ),
 
         // Anything vs Complex -> Complex
         (Number::Complex(l), r) => (Number::Complex(l), Number::Complex(r.to_complex())),
@@ -56,69 +74,53 @@ fn promote(lhs: Number, rhs: Number) -> (Number, Number) {
     }
 }
 
-impl Add for Number {
-    type Output = Number;
-    fn add(self, rhs: Self) -> Self::Output {
-        match promote(self, rhs) {
-            (Number::Integer(l), Number::Integer(r)) => Number::Integer(l + r),
-            (Number::Rational(l), Number::Rational(r)) => Number::Rational(l + r),
-            (Number::Float(l), Number::Float(r)) => Number::Float(l + r),
-            (Number::Complex(l), Number::Complex(r)) => Number::Complex(l + r),
-            _ => unreachable!("Promote should handle all cases"),
+// Macro to implement binary operations +, -, *
+macro_rules! impl_binary_op {
+    ($trait:ident, $method:ident) => {
+        impl $trait for Number {
+            type Output = Number;
+            fn $method(self, rhs: Self) -> Self::Output {
+                match promote(self, rhs) {
+                    (Number::Integer(l), Number::Integer(r)) => Number::Integer(l.$method(r)),
+                    (Number::Rational(l), Number::Rational(r)) => Number::Rational(l.$method(r)),
+                    (Number::Float(l), Number::Float(r)) => Number::Float(l.$method(r)),
+                    (Number::Complex(l), Number::Complex(r)) => Number::Complex(l.$method(r)),
+                    _ => unreachable!("Promote should have handled all type combinations"),
+                }
+            }
         }
-    }
+    };
 }
 
-impl Sub for Number {
-    type Output = Number;
-    fn sub(self, rhs: Self) -> Self::Output {
-         match promote(self, rhs) {
-            (Number::Integer(l), Number::Integer(r)) => Number::Integer(l - r),
-            (Number::Rational(l), Number::Rational(r)) => Number::Rational(l - r),
-            (Number::Float(l), Number::Float(r)) => Number::Float(l - r),
-            (Number::Complex(l), Number::Complex(r)) => Number::Complex(l - r),
-            _ => unreachable!(),
-        }
-    }
-}
-
-impl Mul for Number {
-    type Output = Number;
-    fn mul(self, rhs: Self) -> Self::Output {
-         match promote(self, rhs) {
-            (Number::Integer(l), Number::Integer(r)) => Number::Integer(l * r),
-            (Number::Rational(l), Number::Rational(r)) => Number::Rational(l * r),
-            (Number::Float(l), Number::Float(r)) => Number::Float(l * r),
-            (Number::Complex(l), Number::Complex(r)) => Number::Complex(l * r),
-            _ => unreachable!(),
-        }
-    }
-}
+impl_binary_op!(Add, add);
+impl_binary_op!(Sub, sub);
+impl_binary_op!(Mul, mul);
 
 impl Div for Number {
     type Output = Number;
     fn div(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            // Special Case: Integer / Integer = Rational (not Integer!)
+            // Special Case: Integer / Integer = Rational to preserve precision
             (Number::Integer(l), Number::Integer(r)) => {
                 if r.is_zero() {
-                     // Division by zero in integer arithmetic -> Promote to float for Inf/NaN handling?
-                     // Or error? BigRational handles x/0? No, it panics.
-                     // Let's promote to Float safely.
-                     return Number::Float(l.to_f64().unwrap_or(0.0) / r.to_f64().unwrap_or(0.0));
+                    // Division by zero; promote to float to produce INF
+                    return Number::Float(l.to_f64().unwrap_or(f64::NAN) / 0.0);
                 }
                 Number::Rational(BigRational::new(l, r))
-            },
-             
-            (l, r) => match promote(l, r) {
-                 (Number::Rational(l), Number::Rational(r)) => {
-                      if r.is_zero() { return Number::Float(f64::INFINITY); } // simplistic
-                      Number::Rational(l / r)
-                 },
-                 (Number::Float(l), Number::Float(r)) => Number::Float(l / r),
-                 (Number::Complex(l), Number::Complex(r)) => Number::Complex(l / r),
-                 _ => unreachable!(),
             }
+
+            (l, r) => match promote(l, r) {
+                (Number::Rational(l), Number::Rational(r)) => {
+                    if r.is_zero() {
+                        // Let float division handle infinity.
+                        return Number::Float(l.to_f64().unwrap_or(f64::NAN) / 0.0);
+                    }
+                    Number::Rational(l / r)
+                }
+                (Number::Float(l), Number::Float(r)) => Number::Float(l / r),
+                (Number::Complex(l), Number::Complex(r)) => Number::Complex(l / r),
+                _ => unreachable!(),
+            },
         }
     }
 }
@@ -138,11 +140,13 @@ impl Neg for Number {
 impl Rem for Number {
     type Output = Number;
     fn rem(self, rhs: Self) -> Self::Output {
-         match promote(self, rhs) {
+        match promote(self, rhs) {
             (Number::Integer(l), Number::Integer(r)) => Number::Integer(l % r),
             (Number::Rational(l), Number::Rational(r)) => Number::Rational(l % r),
             (Number::Float(l), Number::Float(r)) => Number::Float(l % r),
-            (Number::Complex(l), Number::Complex(r)) => Number::Float(l.re % r.re), // Complex Modulo is weird, downgrade to Real Modulo
+            // The remainder operator is not well-defined for complex numbers.
+            // Returning NaN is a safe way to signal an invalid operation.
+            (Number::Complex(_), Number::Complex(_)) => Number::Float(f64::NAN),
             _ => unreachable!(),
         }
     }
@@ -150,40 +154,51 @@ impl Rem for Number {
 
 pub fn pow(base: Number, exp: Number) -> Number {
     match (base, exp) {
-         (Number::Integer(b), Number::Integer(e)) => {
-             if e >= BigInt::zero() {
-                 // b^e can be huge.
-                 // Limit? For now, let it fly or try to convert to u32
-                 if let Some(e_u32) = e.to_u32() {
-                     return Number::Integer(b.pow(e_u32));
-                 }
-             }
-             // Negative exponent -> Rational
-              // TODO: Implement
-              Number::Float(b.to_f64().unwrap().powf(e.to_f64().unwrap()))
-         },
-         (b, e) => {
-              // Fallback to Complex for generic power
-              Number::Complex(b.to_complex().powc(e.to_complex()))
-         }
+        // Power of integer by integer
+        (Number::Integer(b), Number::Integer(e)) => {
+            // Positive exponent
+            if e >= BigInt::zero() {
+                if let Some(e_u32) = e.to_u32() {
+                    return Number::Integer(b.pow(e_u32));
+                }
+            }
+            // Negative exponent
+            else {
+                if let Some(e_u32) = (-&e).to_u32() {
+                    let den = b.pow(e_u32);
+                    if den.is_zero() {
+                        return Number::Float(f64::INFINITY);
+                    } // e.g. 0^-2 -> inf
+                    return Number::Rational(BigRational::new(BigInt::one(), den));
+                }
+            }
+            // Exponent is too large for u32, fall back to float calculation
+            let b_f64 = b.to_f64().unwrap_or(f64::NAN);
+            let e_f64 = e.to_f64().unwrap_or(f64::NAN);
+            Number::Float(b_f64.powf(e_f64))
+        }
+        // Fallback to complex powers for all other cases
+        (b, e) => Number::Complex(b.to_complex().powc(e.to_complex())),
     }
 }
 
 pub fn factorial(n: Number) -> Result<Number, String> {
     match n {
         Number::Integer(i) => {
-            if i < BigInt::zero() { return Err("Factorial of negative integer".into()); }
+            if i < BigInt::zero() {
+                return Err("Factorial of negative integer".into());
+            }
             // Warning: Huge loop for big integers.
             // Simplified loop:
             let mut acc = BigInt::one();
             let mut k = BigInt::one();
             while k <= i {
-                 acc = acc * &k;
-                 k = k + 1;
-                 // Safety brake? No, user asked for "Infinite" calculator.
+                acc = acc * &k;
+                k = k + 1;
+                // Safety brake? No, user asked for "Infinite" calculator.
             }
             Ok(Number::Integer(acc))
-        },
-        _ => Err("Factorial only implemented for Integers currently".into())
+        }
+        _ => Err("Factorial only implemented for Integers currently".into()),
     }
 }

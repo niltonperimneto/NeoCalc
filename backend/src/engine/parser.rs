@@ -1,64 +1,21 @@
-use num::complex::Complex64;
+use super::types::Number;
+use super::tokens::Token;
+use super::errors::EngineError;
+use super::ast::{Expr, BinaryOp, UnaryOp};
 use logos::Logos;
-use num_bigint::BigInt;
-use super::functions;
-use super::types::{Number, Context, pow, factorial};
 
-/* Define the tokens that can appear in an expression using the Logos lexer */
-#[derive(Logos, Debug, Clone, PartialEq)]
-#[logos(skip r"[ \t\n\f]+")]
-enum Token<'a> {
-    #[token("+")]
-    Plus,
-    #[token("-")]
-    Minus,
-    #[token("*")]
-    Multiply,
-    #[token("/")]
-    Divide,
-    #[token("^")]
-    Power,
-    #[token("!")]
-    Factorial,
-    #[token("%")]
-    Percent, // Modulo
-    #[token("(")]
-    LParen,
-    #[token(")")]
-    RParen,
-    #[token(",")]
-    Comma,
-    #[token("=")]
-    Equals,
 
-    /* Match Floats: explicit dot or scientific notation */
-    /* Needs to be checked BEFORE Integer to avoid greedy matching issues for things like 1.0 */
-    /* Regex for float: digits dot digits (opt) exponent (opt) OR digits exponent */
-    #[regex(r"[0-9]+\.[0-9]*([eE][+-]?[0-9]+)?", |lex| lex.slice().parse::<f64>().ok())]
-    #[regex(r"[0-9]+[eE][+-]?[0-9]+", |lex| lex.slice().parse::<f64>().ok())]
-    Float(f64),
 
-    /* Match Integers: digits only */
-    #[regex(r"[0-9]+", |lex| lex.slice().parse::<BigInt>().ok())]
-    #[regex(r"0x[0-9a-fA-F]+", |lex| BigInt::parse_bytes(&lex.slice()[2..].as_bytes(), 16))]
-    #[regex(r"0b[01]+", |lex| BigInt::parse_bytes(&lex.slice()[2..].as_bytes(), 2))]
-    Integer(BigInt),
-
-    /* Match variable names or function identifiers */
-    #[regex("[a-zA-Z]+", |lex| lex.slice())]
-    Identifier(&'a str),
-
-    Eof,
-}
-
-pub fn evaluate(expression: &str, context: &mut Context) -> Result<Number, String> {
+/// Parses the expression into an Abstract Syntax Tree (AST).
+/// Does NOT evaluate it.
+pub fn parse(expression: &str) -> Result<Expr, EngineError> {
     /* Initialize the parser with the lexer directly */
     let mut parser = Parser::new(Token::lexer(expression).spanned());
-    let result = parser.parse_bp(0, context)?;
+    let result = parser.parse_bp(0)?;
 
     /* Ensure all tokens were consumed */
     if parser.current() != &Token::Eof {
-        return Err(format!("Unexpected token at end: {:?}", parser.current()));
+        return Err(EngineError::ParserError(format!("Unexpected token at end: {:?}", parser.current())));
     }
 
     Ok(result)
@@ -71,12 +28,7 @@ struct Parser<'a> {
 
 impl<'a> Parser<'a> {
     fn new(mut lexer: logos::SpannedIter<'a, Token<'a>>) -> Self {
-        let current = match lexer.next() {
-            Some((Ok(token), _)) => token,
-            Some((Err(_), _)) => Token::Eof,
-            None => Token::Eof,
-        };
-        
+        let current = fetch_next_token(&mut lexer);
         Parser { lexer, current }
     }
 
@@ -85,172 +37,54 @@ impl<'a> Parser<'a> {
     }
 
     fn advance(&mut self) {
-        self.current = match self.lexer.next() {
-            Some((Ok(token), _)) => token,
-            Some((Err(_), _)) => Token::Eof, 
-            None => Token::Eof,
-        };
+        self.current = fetch_next_token(&mut self.lexer);
     }
 
     /* Pratt parsing algorithm: Parse with a minimum binding power */
-    fn parse_bp(&mut self, min_bp: u8, context: &mut Context) -> Result<Number, String> {
+    fn parse_bp(&mut self, min_bp: u8) -> Result<Expr, EngineError> {
         let token = self.current().clone();
         self.advance();
 
         /* Handle the prefix part (numbers, identifiers, parentheses, unary ops) */
         let mut lhs = match token {
-            Token::Float(f) => Number::Float(f),
-            Token::Integer(i) => Number::Integer(i),
-            Token::Identifier(s) => {
-                // Check if next token is '=', if so, this is an assignment, not a lookup
-                if let Token::Equals = self.current() {
-                    // This will be handled by infix loop? 
-                    // No, assignment usually has very low precedence (1), so infix loop catches it?
-                    // BUT assignment updates the context.
-                    // If we treat '=' as an infix operator, LHS must be valid lvalue.
-                    // Since 'token' here is 'Identifier', we are good.
-                    // But we consumed the identifier.
-                    // Let's defer to the infix loop to see the '='.
-                    // BUT the prefix part must produce a value?
-                    // If we are assigning 'x = ...', 'x' here shouldn't error if undefined.
-                    // Solution: Return a placeholder/special value? Or allow lookup failure?
-                    // Standard way: Prefix returns the looked-up value.
-                    // Assignment: 'x = 5'. 'x' prefix -> Error if undefined?
-                    // If we want 'x = 5', we need to capture the name 'x'.
-                    
-                    // Actually, easier: check strictly for assignment here?
-                    // Or change logic: 'x' binds to a Variable(name) node? We evaluate immediately.
-                    // If we see '=', we can't have evaluated 'x' yet if it's new.
-                    
-                    // Let's Peek.
-                    if let Token::Equals = self.current() {
-                         // We are in an assignment LHS. 
-                         // We return a temporary value? No, we are evaluating.
-                         // We must handle assignment HERE or change architecture.
-                         // If we assume infix '=' handling:
-                         // We need LHS to tell us "I am identifier 'x'".
-                         // But 'evaluate' returns 'Number'. 
-                         // 'Number' doesn't hold names.
-                         
-                         // Hack: Peek ahead. If '=', return 0 (dummy) and let the infix '=' handler 
-                         // overwrite it? No, infix needs the NAME.
-                         
-                         // Since we don't have an AST, we must handle assignment specially.
-                         // Assignment is right-associative.
-                         
-                         let var_name = s.to_string();
-                         // Consume '='
-                         self.advance(); 
-                         // Parse RHS
-                         // Assignment BP is very low (e.g. 1)
-                         let val = self.parse_bp(1, context)?;
-                         context.insert(var_name, val.clone());
-                         return Ok(val);
-                    }
-                
-                    match s {
-                        /* Constants */
-                        "pi" => Number::Float(std::f64::consts::PI),
-                        "e" => Number::Float(std::f64::consts::E),
-                        "i" | "j" => Number::Complex(Complex64::new(0.0, 1.0)),
-                        _ => {
-                            /* Function calls like sin(...) */
-                            if let Token::LParen = self.current() {
-                                self.advance();
-                                
-                                let mut args = Vec::new();
-                                
-                                if let Token::RParen = self.current() {
-                                    self.advance();
-                                } else {
-                                    loop {
-                                        args.push(self.parse_bp(0, context)?);
-                                        
-                                        if let Token::Comma = self.current() {
-                                            self.advance();
-                                        } else if let Token::RParen = self.current() {
-                                            self.advance();
-                                            break;
-                                        } else {
-                                            return Err("Expected ',' or ')' in argument list".to_string());
-                                        }
-                                    }
-                                }
-                                return functions::apply(s, args);
-                            } else {
-                                 // Variable Lookup
-                                 if let Some(val) = context.get(s) {
-                                     val.clone()
-                                 } else {
-                                     return Err(format!("Undefined variable: {}", s));
-                                 }
-                            }
-                        }
-                    }
-                } else {
-                     // Standard lookup (copy-paste from above logic to nested block)
-                     // Refactoring:
-                     match s {
-                        "pi" => Number::Float(std::f64::consts::PI),
-                        "e" => Number::Float(std::f64::consts::E),
-                        "i" | "j" => Number::Complex(Complex64::new(0.0, 1.0)),
-                        _ => {
-                            if let Token::LParen = self.current() {
-                                self.advance();
-                                let mut args = Vec::new();
-                                if let Token::RParen = self.current() {
-                                    self.advance();
-                                } else {
-                                    loop {
-                                        args.push(self.parse_bp(0, context)?);
-                                        if let Token::Comma = self.current() { self.advance(); }
-                                        else if let Token::RParen = self.current() { self.advance(); break; }
-                                        else { return Err("Expected ',' or ')'".to_string()); }
-                                    }
-                                }
-                                functions::apply(s, args)?
-                            } else {
-                                 context.get(s).cloned().ok_or_else(|| format!("Undefined variable: {}", s))?
-                            }
-                        }
-                     }
-                }
-            }
+            Token::Float(f) => Expr::Literal(Number::Float(f)),
+            Token::Integer(i) => Expr::Literal(Number::Integer(i)),
+            Token::Identifier(s) => self.handle_identifier(s.to_string())?,
             Token::LParen => {
-                let val = self.parse_bp(0, context)?;
+                let val = self.parse_bp(0)?;
                 if let Token::RParen = self.current() {
                     self.advance();
                     val
                 } else {
-                    return Err("Expected ')'".to_string());
+                    return Err(EngineError::ParserError("Expected ')'".to_string()));
                 }
             }
             Token::Minus => {
                 let ((), r_bp) = prefix_binding_power(&Token::Minus)?;
-                let rhs = self.parse_bp(r_bp, context)?;
-                -rhs
+                let rhs = self.parse_bp(r_bp)?;
+                Expr::UnaryOp(UnaryOp::Neg, Box::new(rhs))
             }
-            Token::Eof => return Err("Unexpected EOF".to_string()),
-            t => return Err(format!("Unexpected token: {:?}", t)),
+            Token::Eof => return Err(EngineError::ParserError("Unexpected EOF".to_string())),
+            t => return Err(EngineError::ParserError(format!("Unexpected token: {:?}", t))),
         };
 
         /* Handle infix and postfix operators while their binding power is high enough */
         loop {
             let op = self.current();
-            if let Token::Eof = op { break; }
+            if let Token::Eof = op {
+                break;
+            }
 
             // Handle Postfix operators (Factorial)
             if let Token::Factorial = op {
-                 let l_bp = 11; // Postfix binding power
-                 if l_bp < min_bp { break; }
-                 self.advance();
-                 lhs = factorial(lhs)?;
-                 continue;
+                let l_bp = 11; // Postfix binding power
+                if l_bp < min_bp {
+                    break;
+                }
+                self.advance();
+                lhs = Expr::UnaryOp(UnaryOp::Factorial, Box::new(lhs));
+                continue;
             }
-            
-            // Assignment via infix? No, handled in prefix to capture name.
-            // But what if `(x) = 5`? Invalid. 
-            // So identifying it in prefix of Identifier is correct for simple `x=5`.
 
             // Check for explicit Infix or Implicit Multiplication
             let (op_token, l_bp, r_bp) = match infix_binding_power(op) {
@@ -270,45 +104,125 @@ impl<'a> Parser<'a> {
                 break;
             }
 
-            let rhs;
-            if let Some(token) = op_token {
+            // Consume explicit operator if present
+            if op_token.is_some() {
                 self.advance();
-                rhs = self.parse_bp(r_bp, context)?;
-                
-                lhs = match token {
-                    Token::Plus => lhs + rhs,
-                    Token::Minus => lhs - rhs,
-                    Token::Multiply => lhs * rhs,
-                    Token::Divide => lhs / rhs,
-                    Token::Power => pow(lhs, rhs),
-                    Token::Percent => lhs % rhs,
-                    _ => return Err("Impossible operator".to_string()),
+            }
+
+            let rhs = self.parse_bp(r_bp)?;
+
+            // Construct specific BinaryOp
+            if let Some(token) = op_token {
+                let bin_op = match token {
+                    Token::Plus => BinaryOp::Add,
+                    Token::Minus => BinaryOp::Sub,
+                    Token::Multiply => BinaryOp::Mul,
+                    Token::Divide => BinaryOp::Div,
+                    Token::Power => BinaryOp::Pow,
+                    Token::Percent => BinaryOp::Mod,
+                    _ => return Err(EngineError::ParserError(format!("Unknown infix operator: {:?}", token))),
                 };
+                lhs = Expr::BinaryOp(bin_op, Box::new(lhs), Box::new(rhs));
             } else {
                 // Implicit Multiplication
-                rhs = self.parse_bp(r_bp, context)?;
-                lhs = lhs * rhs;
+                lhs = Expr::BinaryOp(BinaryOp::Mul, Box::new(lhs), Box::new(rhs));
             }
         }
 
         Ok(lhs)
     }
+
+    fn handle_identifier(&mut self, name: String) -> Result<Expr, EngineError> {
+        match self.current() {
+            Token::LParen => {
+                /* Function call OR Function Definition: name(arg1, ...) = body */
+                self.advance(); /* eat '(' */
+                
+                // We need to parse arguments. Accessing args logic.
+                // If it's a definition, args must be identifiers.
+                // But parse_arguments parses Exprs.
+                // We can parse generic Exprs. If we hit '=', check if all args were Variables.
+                let args = self.parse_arguments()?;
+                
+                if let Token::Equals = self.current() {
+                    // Function Definition
+                    self.advance(); // eat '='
+                    let body = self.parse_bp(0)?; // Parse body
+                    
+                    // Validate args are variables
+                    let mut params = Vec::new();
+                    for arg in args {
+                        if let Expr::Variable(param_name) = arg {
+                            params.push(param_name);
+                        } else {
+                            return Err(EngineError::ParserError("Function parameters must be identifiers".to_string()));
+                        }
+                    }
+                    Ok(Expr::FunctionDef(name, params, Box::new(body)))
+                } else {
+                    // Function Call
+                    Ok(Expr::FunctionCall(name, args))
+                }
+            }
+            Token::Equals => {
+                 // Assignment: name = expr
+                 self.advance(); // eat '='
+                 let expr = self.parse_bp(0)?;
+                 Ok(Expr::Assignment(name, Box::new(expr)))
+            }
+            _ => {
+                /* Variable access */
+                Ok(Expr::Variable(name))
+            }
+        }
+    }
+
+    fn parse_arguments(&mut self) -> Result<Vec<Expr>, EngineError> {
+        let mut args = Vec::new();
+        if let Token::RParen = self.current() {
+            self.advance();
+            return Ok(args);
+        }
+
+        loop {
+            args.push(self.parse_bp(0)?);
+
+            match self.current() {
+                Token::Comma => {
+                    self.advance();
+                }
+                Token::RParen => {
+                    self.advance();
+                    break;
+                }
+                _ => return Err(EngineError::ParserError("Expected ',' or ')' in argument list".to_string())),
+            }
+        }
+        Ok(args)
+    }
 }
 
-fn prefix_binding_power(op: &Token) -> Result<((), u8), String> {
+fn prefix_binding_power(op: &Token) -> Result<((), u8), EngineError> {
     match op {
-        /* Unary minus has high binding power */
-        Token::Minus => Ok(((), 8)),
-        _ => Err(format!("Bad prefix operator: {:?}", op)),
+        Token::Minus => Ok(((), 9)), // Unary minus
+        _ => Err(EngineError::ParserError(format!("Bad prefix operator: {:?}", op))),
     }
 }
 
 fn infix_binding_power(op: &Token) -> Option<(u8, u8)> {
     match op {
-        /* Standard order of operations PEMDAS */
         Token::Plus | Token::Minus => Some((1, 2)),
         Token::Multiply | Token::Divide | Token::Percent => Some((3, 4)),
-        Token::Power => Some((10, 9)),
+        Token::Power => Some((6, 5)), // Right associative: 2^3^4 = 2^(3^4)
         _ => None,
+    }
+}
+
+// Helper function to fetch the next token from the lexer
+fn fetch_next_token<'a>(lexer: &mut logos::SpannedIter<'a, Token<'a>>) -> Token<'a> {
+    match lexer.next() {
+        Some((Ok(token), _)) => token,
+        Some((Err(_), _)) => Token::Error, // Simple error token
+        None => Token::Eof,
     }
 }

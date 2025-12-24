@@ -1,6 +1,7 @@
 use neocalc_backend::engine::{
     evaluate,
-    types::{Context, Number},
+    ast::Context,
+    types::Number,
 };
 use num_bigint::BigInt;
 use num_rational::BigRational;
@@ -129,5 +130,43 @@ fn test_statistics_exact() {
         assert_eq!(r, BigRational::new(BigInt::from(3), BigInt::from(2)));
     } else {
         panic!("Expected Rational for mean");
+    }
+}
+
+#[test]
+fn test_variables_and_functions() {
+    let mut context = Context::new();
+
+    // Assignment
+    evaluate("x = 10", &mut context).unwrap();
+    
+    // Parens
+    evaluate("(x)", &mut context).unwrap(); // Should equal 10
+
+    // Function call (undefined)
+    let res = evaluate("g(x)", &mut context);
+    match res {
+        Err(neocalc_backend::engine::errors::EngineError::UnknownFunction(_)) => (),
+        _ => panic!("Expected UnknownFunction for g(x), got {:?}", res),
+    }
+
+    // Function definition simple
+    evaluate("h(x) = 10", &mut context).unwrap();
+
+    // Check if it exists
+    let res = evaluate("h(5)", &mut context).unwrap();
+    if let Number::Integer(i) = res {
+         assert_eq!(i, BigInt::from(10));
+    } else {
+        panic!("Expected Integer 10 for h(5)");
+    }
+    
+    // Function definition with usage
+    evaluate("f(x) = x^2", &mut context).unwrap();
+    let res = evaluate("f(5)", &mut context).unwrap();
+    if let Number::Integer(i) = res {
+         assert_eq!(i, BigInt::from(25));
+    } else {
+         panic!("Expected Integer 25 for f(5)");
     }
 }

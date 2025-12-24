@@ -2,16 +2,15 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, Gtk, GLib
-
-from ..grids.scientific import ScientificGrid
-from ..grids.standard import ButtonGrid
-from ..grids.programming import ProgrammingGrid
-from ..grids.financial import FinancialGrid
+from gi.repository import Adw, GLib, Gtk
 
 from ...core.backend import CalculatorLogic
-
 from ..components.display import CalculatorDisplay
+from ..grids.financial import FinancialGrid
+from ..grids.programming import ProgrammingGrid
+from ..grids.scientific import ScientificGrid
+from ..grids.standard import ButtonGrid
+
 
 class CalculatorWidget(Gtk.Box):
     def __init__(self, **kwargs):
@@ -28,8 +27,8 @@ class CalculatorWidget(Gtk.Box):
         self.add_controller(key_controller)
 
         self.display = CalculatorDisplay()
-        self.display.connect('user-edited', self.on_display_edited)
-        self.display.connect('activated', self.on_display_activated)
+        self.display.connect("user-edited", self.on_display_edited)
+        self.display.connect("activated", self.on_display_activated)
 
         main_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
 
@@ -46,11 +45,13 @@ class CalculatorWidget(Gtk.Box):
         self.view_stack = Adw.ViewStack()
 
         from ..grids.standard import ButtonGrid
+
         button_grid = ButtonGrid(self)
         self.view_stack.add_titled(button_grid, "standard", "Standard")
         self.view_stack.get_page(button_grid).set_icon_name("view-grid-symbolic")
 
         from ..grids.scientific import ScientificGrid
+
         scientific_grid = ScientificGrid(self)
         self.view_stack.add_titled(scientific_grid, "scientific", "Scientific")
         self.view_stack.get_page(scientific_grid).set_icon_name(
@@ -59,7 +60,9 @@ class CalculatorWidget(Gtk.Box):
 
         programming_grid = ProgrammingGrid(self)
         self.view_stack.add_titled(programming_grid, "programming", "Programming")
-        self.view_stack.get_page(programming_grid).set_icon_name("applications-engineering-symbolic")
+        self.view_stack.get_page(programming_grid).set_icon_name(
+            "applications-engineering-symbolic"
+        )
 
         financial_grid = FinancialGrid(self)
         self.view_stack.add_titled(financial_grid, "financial", "Financial")
@@ -89,7 +92,7 @@ class CalculatorWidget(Gtk.Box):
 
     def trigger_name_update(self):
         """Trigger parent window to update calculator name"""
-        if self.parent_window and hasattr(self.parent_window, 'update_calculator_name'):
+        if self.parent_window and hasattr(self.parent_window, "update_calculator_name"):
             self.parent_window.update_calculator_name(self)
 
     def get_expression(self):
@@ -109,7 +112,6 @@ class CalculatorWidget(Gtk.Box):
         self.display.backspace_at_cursor()
 
     def update_display(self):
-
         text = self.logic.get_buffer()
         self.display.set_value(text)
         if self.on_expression_changed:
@@ -124,18 +126,18 @@ class CalculatorWidget(Gtk.Box):
 
         try:
             # Avoid preview for simple numbers
-            if text.replace('.', '', 1).isdigit():
+            if text.replace(".", "", 1).isdigit():
                 self.display.set_preview("")
                 return
 
             # Use the new preview method from the backend which respects variables
             result = self.logic.preview(text)
-            
+
             # If result is same as input (no calc happened), hide it
             if result == text or result == "Error" or not result:
-                 self.display.set_preview("")
+                self.display.set_preview("")
             else:
-                 self.display.set_preview(result)
+                self.display.set_preview(result)
         except Exception:
             self.display.set_preview("")
 
@@ -154,8 +156,7 @@ class CalculatorWidget(Gtk.Box):
     def on_display_activated(self, widget):
         ## Use non-blocking evaluation to keep UI responsive
         self.logic.evaluate_non_blocking(
-            on_success=self._on_eval_success,
-            on_error=self._on_eval_error
+            on_success=self._on_eval_success, on_error=self._on_eval_error
         )
 
     def _on_eval_success(self, result):
@@ -167,13 +168,12 @@ class CalculatorWidget(Gtk.Box):
     def _on_eval_error(self, error_msg):
         """Called when async evaluation fails."""
         ## For now, just show the error in the display like the sync version did
-        ## (The backend usually captures errors as strings in the buffer, 
+        ## (The backend usually captures errors as strings in the buffer,
         ## but if an exception bubble up, we handle it here)
         self.display.set_value("Error")
         print(f"Evaluation error: {error_msg}")
 
     def on_key_pressed(self, controller, keyval, keycode, state):
-
         if self.display.has_focus():
             return False
 
@@ -191,8 +191,8 @@ class CalculatorWidget(Gtk.Box):
         name = Gdk.keyval_name(keyval)
 
         if name == "BackSpace":
-             self.backspace_at_cursor()
-             return True
+            self.backspace_at_cursor()
+            return True
 
         elif name in ("Return", "KP_Enter", "ISO_Enter", "equal"):
             self.on_display_activated(None)

@@ -1,6 +1,6 @@
+use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
-use pyo3::exceptions::PyRuntimeError;
 
 use super::constants::*;
 
@@ -15,12 +15,23 @@ pub fn create_calculator_widget(py: Python<'_>, parent_window: &Py<PyAny>) -> Py
     let code = std::ffi::CString::new("CalculatorWidget()").map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
     let calc_widget = py.eval(&code, None, Some(&locals))?.unbind();
 
-    calc_widget.bind(py).setattr(ATTR_PARENT_WINDOW, parent_window)?;
+    calc_widget
+        .bind(py)
+        .setattr(ATTR_PARENT_WINDOW, parent_window)?;
     Ok(calc_widget)
 }
 
-pub fn add_to_tab_view(py: Python<'_>, tab_view: &Py<PyAny>, calc_widget: &Py<PyAny>, title: &str, name: &str, count: i32) -> PyResult<Py<PyAny>> {
-    let page = tab_view.bind(py).call_method1(METHOD_ADD_PAGE, (calc_widget,))?;
+pub fn add_to_tab_view(
+    py: Python<'_>,
+    tab_view: &Py<PyAny>,
+    calc_widget: &Py<PyAny>,
+    title: &str,
+    name: &str,
+    count: i32,
+) -> PyResult<Py<PyAny>> {
+    let page = tab_view
+        .bind(py)
+        .call_method1(METHOD_ADD_PAGE, (calc_widget,))?;
     page.call_method1(METHOD_SET_TITLE, (title,))?;
     let none_obj: Option<Py<PyAny>> = None;
     page.call_method1(METHOD_SET_INDICATOR, (none_obj,))?;
@@ -34,19 +45,30 @@ pub fn add_to_tab_view(py: Python<'_>, tab_view: &Py<PyAny>, calc_widget: &Py<Py
     Ok(page.unbind())
 }
 
-pub fn connect_widget_signals(py: Python<'_>, calc_widget: &Py<PyAny>, row: &Py<PyAny>) -> PyResult<()> {
+pub fn connect_widget_signals(
+    py: Python<'_>,
+    calc_widget: &Py<PyAny>,
+    row: &Py<PyAny>,
+) -> PyResult<()> {
     let row_preview_label = row.bind(py).getattr(ATTR_PREVIEW_LABEL)?;
 
     let locals = PyDict::new(py);
     locals.set_item("preview_label", &row_preview_label)?;
-    let code = std::ffi::CString::new("lambda text, pl=preview_label: pl.set_text(text or '0')").map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+    let code = std::ffi::CString::new("lambda text, pl=preview_label: pl.set_text(text or '0')")
+        .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
     let lambda = py.eval(&code, None, Some(&locals))?;
 
-    calc_widget.bind(py).setattr("on_expression_changed", lambda)?;
+    calc_widget
+        .bind(py)
+        .setattr("on_expression_changed", lambda)?;
     Ok(())
 }
 
-pub fn find_page_by_widget(py: Python<'_>, tab_view: &Py<PyAny>, target_widget: &Py<PyAny>) -> PyResult<Option<(i32, Py<PyAny>)>> {
+pub fn find_page_by_widget(
+    py: Python<'_>,
+    tab_view: &Py<PyAny>,
+    target_widget: &Py<PyAny>,
+) -> PyResult<Option<(i32, Py<PyAny>)>> {
     let n_pages: i32 = tab_view.call_method0(py, METHOD_GET_N_PAGES)?.extract(py)?;
     for i in 0..n_pages {
         let page = tab_view.call_method1(py, METHOD_GET_NTH_PAGE, (i,))?;
@@ -60,12 +82,18 @@ pub fn find_page_by_widget(py: Python<'_>, tab_view: &Py<PyAny>, target_widget: 
     Ok(None)
 }
 
-pub fn find_sidebar_row_by_widget(py: Python<'_>, sidebar_view: &Py<PyAny>, target_widget: &Py<PyAny>) -> PyResult<Option<Py<PyAny>>> {
+pub fn find_sidebar_row_by_widget(
+    py: Python<'_>,
+    sidebar_view: &Py<PyAny>,
+    target_widget: &Py<PyAny>,
+) -> PyResult<Option<Py<PyAny>>> {
     let sidebar_list = sidebar_view.getattr(py, ATTR_SIDEBAR_LIST)?;
     let mut i = 0;
     loop {
         let row = sidebar_list.call_method1(py, METHOD_GET_ROW_AT_INDEX, (i,))?;
-        if row.is_none(py) { break; }
+        if row.is_none(py) {
+            break;
+        }
 
         if row.bind(py).hasattr(ATTR_CALC_WIDGET)? {
             let row_cw = row.getattr(py, ATTR_CALC_WIDGET)?;
@@ -87,14 +115,20 @@ pub fn format_title(history_entry: &str) -> String {
     t
 }
 
-pub fn renumber_instances(py: Python<'_>, tab_view: &Py<PyAny>, sidebar_view: &Py<PyAny>) -> PyResult<()> {
+pub fn renumber_instances(
+    py: Python<'_>,
+    tab_view: &Py<PyAny>,
+    sidebar_view: &Py<PyAny>,
+) -> PyResult<()> {
     let n_pages: i32 = tab_view.call_method0(py, METHOD_GET_N_PAGES)?.extract(py)?;
 
     for i in 0..n_pages {
         let page = tab_view.call_method1(py, METHOD_GET_NTH_PAGE, (i,))?;
         let new_number = i + 1;
 
-        if !page.bind(py).hasattr(ATTR_CALC_NUMBER)? { continue; }
+        if !page.bind(py).hasattr(ATTR_CALC_NUMBER)? {
+            continue;
+        }
 
         page.setattr(py, ATTR_CALC_NUMBER, new_number)?;
 

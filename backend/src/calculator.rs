@@ -3,23 +3,27 @@ use pyo3_async_runtimes::tokio::future_into_py;
 use std::sync::{Arc, Mutex};
 
 use crate::engine;
-use crate::engine::types::{Context, Number};
+use crate::engine::ast::Context;
+use crate::engine::types::Number;
 use crate::utils::{self, lock_mutex};
+
+use crate::engine::errors::EngineError;
 
 /// The interface between Python (Dynamic Bliss) and Rust (Static Pain).
 #[pyclass]
 #[derive(Clone, Default)]
+#[allow(deprecated)] // Ignore deprecations during refactor if any
 pub struct Calculator {
     /* Stores the history of calculations as a list of strings */
     history: Arc<Mutex<Vec<String>>>,
     /* Stores the current input value being typed or displayed */
     input_buffer: Arc<Mutex<String>>,
     /* Stores variables */
-    variables: Arc<Mutex<engine::types::Context>>,
+    variables: Arc<Mutex<Context>>,
 }
 
 impl Calculator {
-    fn _convert_base(&self, radix: u32, prefix: &str) -> PyResult<String> {
+    fn convert_base_internal(&self, radix: u32, prefix: &str) -> PyResult<String> {
         let buffer = lock_mutex(&self.input_buffer)?;
         let mut context = lock_mutex(&self.variables)?;
 
@@ -49,15 +53,15 @@ impl Calculator {
                 *buffer = result_str.clone();
                 Ok(result_str)
             }
-            Err(e) => Ok(e),
+            Err(e) => Ok(e.to_string()), // Convert EngineError to string for Python UI
         }
     }
 
-    fn _evaluate_expression(
+    fn evaluate_internal(
         &self,
         expr_to_eval: &str,
         context: &mut Context,
-    ) -> Result<Number, String> {
+    ) -> Result<Number, EngineError> {
         engine::evaluate(expr_to_eval, context)
     }
 }
@@ -70,7 +74,7 @@ impl Calculator {
         Calculator {
             history: Arc::new(Mutex::new(Vec::new())),
             input_buffer: Arc::new(Mutex::new(String::from("0"))),
-            variables: Arc::new(Mutex::new(std::collections::HashMap::new())),
+            variables: Arc::new(Mutex::new(Context::new())),
         }
     }
 
@@ -127,11 +131,11 @@ impl Calculator {
         };
 
         let mut context = lock_mutex(&self.variables)?;
-        let res = self._evaluate_expression(&expr_to_eval, &mut context);
+        let res = self.evaluate_internal(&expr_to_eval, &mut context);
 
         let output = match &res {
             Ok(n) => utils::format_number(n.clone()),
-            Err(e) => e.clone(),
+            Err(e) => e.to_string(),
         };
 
         if res.is_ok() && !expr_to_eval.trim().is_empty() {
@@ -173,14 +177,14 @@ impl Calculator {
         future_into_py(py, async move {
             let res = tokio::task::spawn_blocking(move || {
                 let mut context = self_clone.variables.lock().unwrap();
-                self_clone._evaluate_expression(&expr_for_task, &mut context)
+                self_clone.evaluate_internal(&expr_for_task, &mut context)
             })
             .await
             .unwrap();
 
             let output = match &res {
                 Ok(n) => utils::format_number(n.clone()),
-                Err(e) => e.clone(),
+                Err(e) => e.to_string(),
             };
 
             if res.is_ok() && !buffer_val.trim().is_empty() {
@@ -207,11 +211,11 @@ impl Calculator {
     }
 
     fn convert_to_hex(&self) -> PyResult<String> {
-        self._convert_base(16, "0x")
+        self.convert_base_internal(16, "0x")
     }
 
     fn convert_to_bin(&self) -> PyResult<String> {
-        self._convert_base(2, "0b")
+        self.convert_base_internal(2, "0b")
     }
 
     fn preview(&self, expression: String) -> PyResult<String> {
@@ -232,8 +236,10 @@ impl Calculator {
     fn get_variables(&self) -> PyResult<std::collections::HashMap<String, String>> {
         let context = lock_mutex(&self.variables)?;
         let mut result = std::collections::HashMap::new();
-        for (k, v) in context.iter() {
-            result.insert(k.clone(), utils::format_number(v.clone()));
+        for scope in &context.scopes {
+            for (k, v) in scope {
+                result.insert(k.clone(), utils::format_number(v.clone()));
+            }
         }
         Ok(result)
     }
