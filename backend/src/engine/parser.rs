@@ -40,10 +40,14 @@ impl<'a> Parser<'a> {
         self.current = fetch_next_token(&mut self.lexer);
     }
 
+    fn advance_with_token(&mut self) -> Token<'a> {
+        let next = fetch_next_token(&mut self.lexer);
+        std::mem::replace(&mut self.current, next)
+    }
+
     /* Pratt parsing algorithm: Parse with a minimum binding power */
     fn parse_bp(&mut self, min_bp: u8) -> Result<Expr, EngineError> {
-        let token = self.current().clone();
-        self.advance();
+        let token = self.advance_with_token();
 
         /* Handle the prefix part (numbers, identifiers, parentheses, unary ops) */
         let mut lhs = match token {
@@ -87,12 +91,12 @@ impl<'a> Parser<'a> {
             }
 
             // Check for explicit Infix or Implicit Multiplication
-            let (op_token, l_bp, r_bp) = match infix_binding_power(op) {
-                Some((l, r)) => (Some(op.clone()), l, r),
+            let (is_explicit, l_bp, r_bp) = match infix_binding_power(op) {
+                Some((l, r)) => (true, l, r),
                 None => {
                     // Check for Implicit Multiplication:
                     if matches!(op, Token::LParen | Token::Identifier(_)) {
-                        (None, 3, 4)
+                        (false, 3, 4)
                     } else {
                         break;
                     }
@@ -104,16 +108,9 @@ impl<'a> Parser<'a> {
                 break;
             }
 
-            // Consume explicit operator if present
-            if op_token.is_some() {
-                self.advance();
-            }
-
-            let rhs = self.parse_bp(r_bp)?;
-
-            // Construct specific BinaryOp
-            if let Some(token) = op_token {
-                let bin_op = match token {
+            let bin_op = if is_explicit {
+                let token = self.advance_with_token();
+                match token {
                     Token::Plus => BinaryOp::Add,
                     Token::Minus => BinaryOp::Sub,
                     Token::Multiply => BinaryOp::Mul,
@@ -121,12 +118,13 @@ impl<'a> Parser<'a> {
                     Token::Power => BinaryOp::Pow,
                     Token::Percent => BinaryOp::Mod,
                     _ => return Err(EngineError::ParserError(format!("Unknown infix operator: {:?}", token))),
-                };
-                lhs = Expr::BinaryOp(bin_op, Box::new(lhs), Box::new(rhs));
+                }
             } else {
-                // Implicit Multiplication
-                lhs = Expr::BinaryOp(BinaryOp::Mul, Box::new(lhs), Box::new(rhs));
-            }
+                BinaryOp::Mul
+            };
+
+            let rhs = self.parse_bp(r_bp)?;
+            lhs = Expr::BinaryOp(bin_op, Box::new(lhs), Box::new(rhs));
         }
 
         Ok(lhs)

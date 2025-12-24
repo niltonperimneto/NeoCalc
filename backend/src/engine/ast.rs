@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use super::types::{Number, factorial, pow};
 use super::functions;
 use super::errors::EngineError;
@@ -11,7 +12,7 @@ pub struct UserFunction {
 
 #[derive(Debug, Clone)]
 pub struct Context {
-    pub scopes: Vec<HashMap<String, Number>>,
+    pub scopes: Vec<HashMap<String, Arc<Number>>>,
     pub functions: HashMap<String, UserFunction>,
 }
 
@@ -29,7 +30,7 @@ impl Context {
         Self::default()
     }
 
-    pub fn get_var(&self, name: &str) -> Option<&Number> {
+    pub fn get_var(&self, name: &str) -> Option<&Arc<Number>> {
         // Search from top (local) to bottom (global)
         for scope in self.scopes.iter().rev() {
             if let Some(val) = scope.get(name) {
@@ -39,7 +40,7 @@ impl Context {
         None
     }
 
-    pub fn set_var(&mut self, name: String, value: Number) {
+    pub fn set_var(&mut self, name: String, value: Arc<Number>) {
         // Set in current usage scope (usually global for assignments unless explicit local)
         // Simplest strategy: Assignment = update closest scope if exists, else define in global? 
         // OR define in current (top) scope?
@@ -91,7 +92,7 @@ pub enum Expr {
 } 
 
 impl Expr {
-    pub fn eval(&self, context: &mut Context) -> Result<Number, EngineError> {
+    pub fn eval(&self, context: &mut Context) -> Result<Arc<Number>, EngineError> {
         // Optimization: Iterative traversal for left-associative BinaryOps to prevent stack overflow
         let mut stack = Vec::new();
         let mut current_expr = self;
@@ -104,7 +105,7 @@ impl Expr {
 
         // Evaluate the leaf (LHS base)
         let mut result = match current_expr {
-            Expr::Literal(n) => Ok(n.clone()),
+            Expr::Literal(n) => Ok(Arc::new(n.clone())),
             Expr::Variable(name) => {
                 context.get_var(name).cloned().ok_or_else(|| EngineError::UndefinedVariable(name.clone()))
             },
@@ -119,13 +120,14 @@ impl Expr {
                     body: *body.clone(),
                 };
                 context.functions.insert(name.clone(), func);
-                Ok(Number::Integer(num_bigint::BigInt::from(0))) 
+                Ok(Arc::new(Number::Integer(num_bigint::BigInt::from(0))))
             },
             Expr::UnaryOp(op, expr) => {
-                let val = expr.eval(context)?;
+                let val_arc = expr.eval(context)?;
+                let val = (*val_arc).clone();
                 match op {
-                    UnaryOp::Neg => Ok(-val),
-                    UnaryOp::Factorial => factorial(val).map_err(EngineError::Generic),
+                    UnaryOp::Neg => Ok(Arc::new(-val)),
+                    UnaryOp::Factorial => factorial(val).map(Arc::new).map_err(EngineError::Generic),
                 }
             },
             Expr::FunctionCall(name, args_exprs) => {
@@ -146,7 +148,8 @@ impl Expr {
                     context.pop_scope();
                     result
                 } else {
-                    functions::apply(name, args)
+                    let raw_args: Vec<Number> = args.iter().map(|a| (**a).clone()).collect();
+                    functions::apply(name, raw_args).map(Arc::new)
                 }
             },
             Expr::BinaryOp(_, _, _) => unreachable!("BinaryOp should be handled by the loop"),
@@ -169,18 +172,21 @@ impl Expr {
         // So we apply `(+, 2)` then `(+, 3)`. Correct order for `((1+2)+3)`.
         
         while let Some((op, rhs_expr)) = stack.pop() {
-            let rhs = rhs_expr.eval(context)?;
-            result = match op {
-                BinaryOp::Add => result + rhs,
-                BinaryOp::Sub => result - rhs,
-                BinaryOp::Mul => result * rhs,
-                BinaryOp::Div => result / rhs,
-                BinaryOp::Mod => result % rhs,
-                BinaryOp::Pow => pow(result, rhs),
+            let rhs_arc = rhs_expr.eval(context)?;
+            let lhs = (*result).clone();
+            let rhs = (*rhs_arc).clone();
+            
+            let res_num = match op {
+                BinaryOp::Add => lhs + rhs,
+                BinaryOp::Sub => lhs - rhs,
+                BinaryOp::Mul => lhs * rhs,
+                BinaryOp::Div => lhs / rhs,
+                BinaryOp::Mod => lhs % rhs,
+                BinaryOp::Pow => pow(lhs, rhs),
             };
+            result = Arc::new(res_num);
         }
         
         Ok(result)
     }
 }
-

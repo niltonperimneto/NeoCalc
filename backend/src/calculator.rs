@@ -238,7 +238,7 @@ impl Calculator {
         let mut result = std::collections::HashMap::new();
         for scope in &context.scopes {
             for (k, v) in scope {
-                result.insert(k.clone(), utils::format_number(v.clone()));
+                result.insert(k.clone(), utils::format_number((**v).clone()));
             }
         }
         Ok(result)

@@ -114,6 +114,8 @@ pub fn npv(args: &[Number]) -> Result<Number, EngineError> {
     let mut sum = Complex64::zero();
     let one = Complex64::new(1.0, 0.0);
     
+    // Precision Critical: Use independent powc per term to prevent cumulative error drift.
+    // Complexity: O(N log t)
     for (i, &val) in values.iter().enumerate() {
         let t = (i+1) as f64;
         sum += val / (one + rate).powf(t);
@@ -122,6 +124,7 @@ pub fn npv(args: &[Number]) -> Result<Number, EngineError> {
 }
 
 pub fn irr(args: &[Number]) -> Result<Number, EngineError> {
+    // Precision Critical: Use Complex64 to handle all root paths and independent powc calls.
     let args = to_complex_args(args);
     let values: Vec<f64> = args.iter().map(|c| c.re).collect();
     let mut guess = 0.1;

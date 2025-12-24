@@ -12,5 +12,5 @@ use crate::engine::ast::Context;
 
 pub fn evaluate(expression: &str, context: &mut Context) -> Result<Number, EngineError> {
     let expr = parser::parse(expression)?;
-    expr.eval(context)
+    expr.eval(context).map(|arc_num| (*arc_num).clone())
 }
