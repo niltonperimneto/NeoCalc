@@ -17,23 +17,26 @@ pub fn mean(args: &[Number]) -> Result<Number, EngineError> {
 pub fn median(args: &[Number]) -> Result<Number, EngineError> {
     if args.is_empty() { return Err(EngineError::ArgumentMismatch("median".into(), 1)); }
     
-    let mut reals = Vec::with_capacity(args.len());
+    // Validate inputs are real numbers (not Complex)
     for n in args {
-        if let Some(f) = n.to_f64() {
-             reals.push((f, n.clone()));
-        } else {
+        if let Number::Complex(_) = n {
              return Err(EngineError::TypeMismatch("Median requires real numbers".into(), "Complex".into()));
         }
     }
+
+    // Optimization: Collect references to avoid cloning heavy BigInts during sort
+    let mut refs: Vec<&Number> = args.iter().collect();
     
-    reals.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+    // Sort using PartialOrd which uses exact Integer/Rational comparison where possible
+    refs.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     
-    let mid = reals.len() / 2;
-    if reals.len() % 2 == 1 {
-        Ok(reals[mid].1.clone())
+    let mid = refs.len() / 2;
+    if refs.len() % 2 == 1 {
+        Ok(refs[mid].clone())
     } else {
-        let left = reals[mid-1].1.clone();
-        let right = reals[mid].1.clone();
+        let left = refs[mid-1].clone();
+        let right = refs[mid].clone();
+        // Mean of the two middle elements
         Ok((left + right) / Number::Integer(BigInt::from(2)))
     }
 }

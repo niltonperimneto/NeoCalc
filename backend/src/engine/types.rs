@@ -39,6 +39,19 @@ impl Number {
             }
         }
     }
+// Number struct definition
+}
+
+impl PartialOrd for Number {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match promote(self.clone(), other.clone()) {
+            (Number::Integer(l), Number::Integer(r)) => Some(l.cmp(&r)),
+            (Number::Rational(l), Number::Rational(r)) => Some(l.cmp(&r)),
+            (Number::Float(l), Number::Float(r)) => l.partial_cmp(&r),
+            (Number::Complex(_), _) | (_, Number::Complex(_)) => None,
+            _ => None, // Should be unreachable given promote
+        }
+    }
 }
 
 // Helper to promote types

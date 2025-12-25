@@ -1,4 +1,5 @@
 use pyo3::prelude::*;
+use pyo3::exceptions::PyRuntimeError;
 use pyo3_async_runtimes::tokio::future_into_py;
 use std::sync::{Arc, Mutex};
 
@@ -219,17 +220,25 @@ impl Calculator {
     }
 
     fn preview(&self, expression: String) -> PyResult<String> {
-        let context = lock_mutex(&self.variables)?;
-        // Clone context to ensure preview doesn't modify actual state (if we had mutable ops)
-        // Currently evaluate accepts &mut Context. Assignments modify it.
-        // We WANT preview to NOT modify variables (e.g. previewing "x=5" shouldn't set x).
-        // So we should clone the context.
-        let mut context_clone = context.clone();
+        // Optimization: Use try_lock to avoid freezing the UI if a long calculation is running.
+        // If the variables context is locked (busy), we just skip the preview update.
+        let context_guard = match self.variables.try_lock() {
+            Ok(guard) => guard,
+            Err(std::sync::TryLockError::WouldBlock) => return Ok("...".to_string()),
+            Err(e) => return Err(PyRuntimeError::new_err(format!("Lock poisoned: {}", e))),
+        };
 
+        // Clone context to ensure preview doesn't modify actual state (if we had mutable ops)
+        let mut context_clone = context_guard.clone();
+        drop(context_guard); // Release lock immediately after cloning (though clone might take a microsecond)
+        
+        // Actually, if evaluate is running, we won't get the lock at all.
+        // So we return "...".
+        
         let res = engine::evaluate(&expression, &mut context_clone);
         match res {
             Ok(n) => Ok(utils::format_number(n)),
-            Err(_) => Ok("".to_string()), // Return empty for errors in preview
+            Err(_) => Ok("".to_string()),
         }
     }
 
