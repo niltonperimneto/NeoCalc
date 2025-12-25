@@ -5,6 +5,6 @@ edition = "2024"
 
 [dependencies]
 pyo3 = { version = "0.27.2", features = ["auto-initialize"] }
-neocalc_backend = { path = "../backend" }
+neocalc_backend = { path = "../backend/crates/python", package = "neocalc-python", default-features = false }
 tokio = { version = "1.48", features = ["full"] }
 gettext-rs = { version = "0.7", features = ["gettext-system"] }

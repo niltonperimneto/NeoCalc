@@ -3,12 +3,10 @@ use pyo3::exceptions::PyRuntimeError;
 use pyo3_async_runtimes::tokio::future_into_py;
 use std::sync::{Arc, Mutex};
 
-use crate::engine;
-use crate::engine::ast::Context;
-use crate::engine::types::Number;
-use crate::utils::{self, lock_mutex};
-
-use crate::engine::errors::EngineError;
+use neocalc_core::engine;
+use neocalc_core::{Context, Number, EngineError};
+use crate::utils::lock_mutex;
+use neocalc_core::utils as core_utils; // Rename to avoid conflict with local utils
 
 /// The interface between Python (Dynamic Bliss) and Rust (Static Pain).
 #[pyclass]
@@ -88,11 +86,11 @@ impl Calculator {
             *buffer = text;
         } else {
             /* Map special tokens like X to * and append */
-            let mapped = utils::map_input_token(&text);
+            let mapped = core_utils::map_input_token(&text);
             buffer.push_str(mapped);
 
             /* If a function like sin( is added, ensure opening paren */
-            if utils::should_auto_paren(mapped) {
+            if core_utils::should_auto_paren(mapped) {
                 buffer.push('(');
             }
         }
@@ -135,7 +133,7 @@ impl Calculator {
         let res = self.evaluate_internal(&expr_to_eval, &mut context);
 
         let output = match &res {
-            Ok(n) => utils::format_number(n.clone()),
+            Ok(n) => core_utils::format_number(n.clone()),
             Err(e) => e.to_string(),
         };
 
@@ -184,7 +182,7 @@ impl Calculator {
             .unwrap();
 
             let output = match &res {
-                Ok(n) => utils::format_number(n.clone()),
+                Ok(n) => core_utils::format_number(n.clone()),
                 Err(e) => e.to_string(),
             };
 
@@ -237,7 +235,7 @@ impl Calculator {
         
         let res = engine::evaluate(&expression, &mut context_clone);
         match res {
-            Ok(n) => Ok(utils::format_number(n)),
+            Ok(n) => Ok(core_utils::format_number(n)),
             Err(_) => Ok("".to_string()),
         }
     }
@@ -247,7 +245,7 @@ impl Calculator {
         let mut result = std::collections::HashMap::new();
         for scope in &context.scopes {
             for (k, v) in scope {
-                result.insert(k.clone(), utils::format_number((**v).clone()));
+                result.insert(k.clone(), core_utils::format_number((**v).clone()));
             }
         }
         Ok(result)

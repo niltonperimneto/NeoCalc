@@ -1,22 +1,21 @@
 [package]
-name = "neocalc_backend"
-version = "1.0.0"
+name = "neocalc-python"
+version = "0.1.0"
 edition = "2024"
 
 [lib]
-name = "neocalc_backend"
+name = "neocalc_backend" # Keep original name for Python module compat
 crate-type = ["cdylib", "rlib"]
 
+[features]
+default = ["extension-module"]
+extension-module = ["pyo3/extension-module"]
+
 [dependencies]
+neocalc-core = { path = "../core" }
 pyo3 = { version = "0.27.2" }
 pyo3-async-runtimes = { version = "0.27", features = ["tokio-runtime"] }
 tokio = { version = "1.48", features = ["full"] }
 num = "0.4"
-num-bigint = "0.4"
-num-rational = "0.4"
-num-traits = "0.2"
-logos = "0.16"
-once_cell = "1.19"
 gettext-rs = { version = "0.7", features = ["gettext-system"] }
 thiserror = "2.0"
-inventory = "0.3"

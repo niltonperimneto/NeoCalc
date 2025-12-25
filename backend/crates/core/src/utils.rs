@@ -1,16 +1,8 @@
 use num::complex::Complex64;
-use pyo3::exceptions::PyRuntimeError;
-use pyo3::prelude::*;
-use std::sync::{Mutex, MutexGuard};
 
 pub const EPSILON: f64 = 1e-10;
 
-/// Helper to lock a mutex and map poison errors to PyRuntimeError
-pub fn lock_mutex<T>(mutex: &Mutex<T>) -> PyResult<MutexGuard<'_, T>> {
-    mutex
-        .lock()
-        .map_err(|e| PyRuntimeError::new_err(format!("Lock poisoned: {}", e)))
-}
+// lock_mutex removed (moved to bindings)
 
 pub fn format_float(val: f64) -> String {
     if val.fract().abs() < EPSILON {

@@ -1,7 +1,7 @@
-use neocalc_backend::engine::{
+use neocalc_core::{
     evaluate,
-    ast::Context,
-    types::Number,
+    Context,
+    Number,
 };
 use num_bigint::BigInt;
 use num_rational::BigRational;
@@ -146,7 +146,7 @@ fn test_variables_and_functions() {
     // Function call (undefined)
     let res = evaluate("g(x)", &mut context);
     match res {
-        Err(neocalc_backend::engine::errors::EngineError::UnknownFunction(_)) => (),
+        Err(neocalc_core::EngineError::UnknownFunction(_)) => (),
         _ => panic!("Expected UnknownFunction for g(x), got {:?}", res),
     }
 

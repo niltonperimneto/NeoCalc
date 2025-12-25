@@ -207,7 +207,7 @@ name = "launcher"
 version = "1.0.0"
 dependencies = [
  "gettext-rs",
- "neocalc_backend",
+ "neocalc-python",
  "pyo3",
  "tokio",
 ]
@@ -316,8 +316,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "neocalc_backend"
-version = "1.0.0"
+name = "neocalc-core"
+version = "0.1.0"
 dependencies = [
  "gettext-rs",
  "inventory",
@@ -327,6 +327,16 @@ dependencies = [
  "num-rational",
  "num-traits",
  "once_cell",
+ "thiserror",
+]
+
+[[package]]
+name = "neocalc-python"
+version = "0.1.0"
+dependencies = [
+ "gettext-rs",
+ "neocalc-core",
+ "num",
  "pyo3",
  "pyo3-async-runtimes",
  "thiserror",

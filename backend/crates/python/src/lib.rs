@@ -2,10 +2,9 @@ use pyo3::prelude::*;
 use pyo3::types::PyModule;
 use pyo3::Bound;
 
-pub mod engine;
+mod calculator;
 mod managers;
 mod utils;
-mod calculator;
 
 #[pymodule]
 pub fn neocalc_backend(m: &Bound<PyModule>) -> PyResult<()> {
