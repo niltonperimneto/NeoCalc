@@ -216,6 +216,13 @@ jobs:
           cp -r /ucrt64/share/icons/Adwaita dist/NeoCalc/share/icons/
           cp -r /ucrt64/share/icons/hicolor dist/NeoCalc/share/icons/
           
+          # Copy GDK Pixbuf Loaders (SVG Support)
+          mkdir -p dist/NeoCalc/lib/gdk-pixbuf-2.0/2.10.0/loaders
+          cp /ucrt64/lib/gdk-pixbuf-2.0/2.10.0/loaders/*.dll dist/NeoCalc/lib/gdk-pixbuf-2.0/2.10.0/loaders/
+          cp /ucrt64/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache dist/NeoCalc/lib/gdk-pixbuf-2.0/2.10.0/
+          # Sanitize cache paths (remove absolute /ucrt64 prefix to make it relocatable-ish)
+          sed -i 's|/ucrt64/||g' dist/NeoCalc/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache
+          
           # Copy Python Standard Library
           mkdir -p dist/NeoCalc/lib
           cp -r /ucrt64/lib/python3.* dist/NeoCalc/lib/
