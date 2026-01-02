@@ -1,16 +1,80 @@
-name: Build NeoCalc
+name: Release Desktop
 
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - main
-  pull_request:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
 
 jobs:
+  # Job 1: Auto-Tagging (Only runs on manual trigger)
+  create_tag:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    outputs:
+      new_tag: ${{ steps.tag_step.outputs.new_tag }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Calculate and Push Tag
+        id: tag_step
+        run: |
+          echo "Manual trigger detected. Calculating new version..."
+          YEAR_MONTH=$(date +'%Y.%m')
+          git fetch --tags
+          LAST_TAG=$(git tag -l "v$YEAR_MONTH-*" | sort -V | tail -n 1)
+          
+          if [ -z "$LAST_TAG" ]; then
+             NEW_TAG="v$YEAR_MONTH-1"
+          else
+             REV=${LAST_TAG##*-}
+             NEXT_REV=$((REV + 1))
+             NEW_TAG="v$YEAR_MONTH-$NEXT_REV"
+          fi
+          
+          echo "Generated Tag: $NEW_TAG"
+          git tag $NEW_TAG
+          git push origin $NEW_TAG
+          echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+
+  # Job 2: Define Version (Run for all triggered builds to normalize version tag)
+  define_version:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: create_tag
+    outputs:
+      version: ${{ steps.define.outputs.version }}
+    steps:
+      - id: define
+        run: |
+          if [ "${{ needs.create_tag.result }}" == "success" ]; then
+             echo "version=${{ needs.create_tag.outputs.new_tag }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+             echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+             echo "version=0.0.0-dev" >> $GITHUB_OUTPUT
+          fi
+
+
+  # Job 4: Build Linux
   build-linux:
     runs-on: ubuntu-latest
+    needs: [create_tag, define_version]
+    if: |
+      always() && 
+      (needs.create_tag.result == 'success' || (needs.create_tag.result == 'skipped' && startsWith(github.ref, 'refs/tags/v')))
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       
       - name: Install Dependencies
         run: |
@@ -28,17 +92,28 @@ jobs:
           cp target/release/launcher dist/NeoCalc/NeoCalc
           cp -r python dist/NeoCalc/
           cp README.md dist/NeoCalc/
-          
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: NeoCalc-Linux
-          path: dist/NeoCalc/
+          tar -czf NeoCalc-Linux.tar.gz -C dist/NeoCalc .
 
+      - name: Release Linux
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.define_version.outputs.version }}
+          name: Release ${{ needs.define_version.outputs.version }}
+          files: NeoCalc-Linux.tar.gz
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Job 5: Build Flatpak
   build-flatpak:
     runs-on: ubuntu-latest
+    needs: [create_tag, define_version]
+    if: |
+      always() && 
+      (needs.create_tag.result == 'success' || (needs.create_tag.result == 'skipped' && startsWith(github.ref, 'refs/tags/v')))
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       
       - name: Install Flatpak tools
         run: |
@@ -77,16 +152,26 @@ jobs:
           flatpak-builder --user --install-deps-from=flathub --disable-rofiles-fuse --repo=repo build-dir com.niltonperimneto.neocalc.yml
           flatpak build-bundle repo neocalc.flatpak com.niltonperimneto.neocalc
       
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Release Flatpak
+        uses: softprops/action-gh-release@v2
         with:
-          name: NeoCalc-Flatpak
-          path: neocalc.flatpak
+          tag_name: ${{ needs.define_version.outputs.version }}
+          name: Release ${{ needs.define_version.outputs.version }}
+          files: neocalc.flatpak
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # Job 6: Build Windows
   build-windows:
     runs-on: windows-latest
+    needs: [create_tag, define_version]
+    if: |
+      always() && 
+      (needs.create_tag.result == 'success' || (needs.create_tag.result == 'skipped' && startsWith(github.ref, 'refs/tags/v')))
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
@@ -115,75 +200,38 @@ jobs:
           mkdir -p dist/NeoCalc
           cp target/release/launcher.exe dist/NeoCalc/NeoCalc.exe
           cp -r python dist/NeoCalc/
-          # Copy essential DLLs from UCRT64 environment
-          cp /ucrt64/bin/libpython3*.dll dist/NeoCalc/
-          cp /ucrt64/bin/libgtk-4-1.dll dist/NeoCalc/
-          cp /ucrt64/bin/libadwaita-1-0.dll dist/NeoCalc/
-          cp /ucrt64/bin/libgio-2.0-0.dll dist/NeoCalc/
-          cp /ucrt64/bin/libgobject-2.0-0.dll dist/NeoCalc/
-          cp /ucrt64/bin/libglib-2.0-0.dll dist/NeoCalc/
-          cp /ucrt64/bin/libgirepository-1.0-1.dll dist/NeoCalc/
-          cp /ucrt64/bin/libcairo-2.dll dist/NeoCalc/
-          cp /ucrt64/bin/libpango-1.0-0.dll dist/NeoCalc/
-          cp /ucrt64/bin/libpangocairo-1.0-0.dll dist/NeoCalc/
-          cp /ucrt64/bin/libffi-8.dll dist/NeoCalc/
-          cp /ucrt64/bin/libintl-8.dll dist/NeoCalc/
-          cp /ucrt64/bin/libgcc_s_seh-1.dll dist/NeoCalc/
-          cp /ucrt64/bin/libwinpthread-1.dll dist/NeoCalc/
-          cp /ucrt64/bin/libiconv-2.dll dist/NeoCalc/
           
-          # Copy Python Standard Library (fixes module errors)
-          # UCRT64 Environment puts it in /ucrt64/lib/python3.X
+          # Copy dependencies using ldd
+          ldd target/release/launcher.exe | grep '/ucrt64' | awk '{print $3}' | sort | uniq | xargs -I {} cp {} dist/NeoCalc/
+          
+          # Copy Resources (Schemas, Icons, etc.)
+          mkdir -p dist/NeoCalc/share/glib-2.0/schemas
+          cp /ucrt64/share/glib-2.0/schemas/gschemas.compiled dist/NeoCalc/share/glib-2.0/schemas/
+          # Also copy source xmls just in case, or recompile. Best practice is to compile a new one if we had custom schemas, 
+          # but here we rely on system ones mostly. We should copy the adwaita/gtk schemas.
+          cp /ucrt64/share/glib-2.0/schemas/*.xml dist/NeoCalc/share/glib-2.0/schemas/
+          glib-compile-schemas dist/NeoCalc/share/glib-2.0/schemas/
+          
+          mkdir -p dist/NeoCalc/share/icons
+          cp -r /ucrt64/share/icons/Adwaita dist/NeoCalc/share/icons/
+          cp -r /ucrt64/share/icons/hicolor dist/NeoCalc/share/icons/
+          
+          # Copy Python Standard Library
           mkdir -p dist/NeoCalc/lib
           cp -r /ucrt64/lib/python3.* dist/NeoCalc/lib/
           
-          echo "DLLs copied."
-          mkdir -p dist/NeoCalc/lib
-          cp -r /ucrt64/lib/python3.* dist/NeoCalc/lib/
-          
-          echo "DLLs copied."
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: NeoCalc-Windows
-          path: dist/NeoCalc/
-
-  create-release:
-    needs: [build-linux, build-flatpak, build-windows]
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v5
-      
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ./artifacts
-      
-      - name: Prepare release assets
+      - name: Zip Bundle
+        shell: msys2 {0}
         run: |
-          mkdir -p release-assets
-          cd artifacts
+          cd dist
+          zip -r ../NeoCalc-Windows.zip NeoCalc
           
-          # Create archives for each platform
-          if [ -d "NeoCalc-Linux" ]; then
-            tar -czf ../release-assets/NeoCalc-Linux.tar.gz NeoCalc-Linux/
-          fi
-          
-          if [ -d "NeoCalc-Flatpak" ]; then
-            cp NeoCalc-Flatpak/neocalc.flatpak ../release-assets/
-          fi
-          
-          if [ -d "NeoCalc-Windows" ]; then
-            zip -r ../release-assets/NeoCalc-Windows.zip NeoCalc-Windows/
-          fi
-      
-      - name: Create Release
+      - name: Release Windows
         uses: softprops/action-gh-release@v2
         with:
-          files: release-assets/*
+          tag_name: ${{ needs.define_version.outputs.version }}
+          name: Release ${{ needs.define_version.outputs.version }}
+          files: NeoCalc-Windows.zip
           draft: false
           prerelease: false
         env:
