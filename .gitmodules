@@ -1,3 +1,0 @@
-[submodule "backend/crates/core"]
-	path = backend/crates/core
-	url = https://github.com/niltonperimneto/neocalc-core.git
