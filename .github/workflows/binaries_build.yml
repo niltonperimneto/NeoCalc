@@ -19,6 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          submodules: true
           fetch-depth: 0
 
       - name: Configure Git
@@ -75,6 +76,8 @@ jobs:
       (needs.create_tag.result == 'success' || (needs.create_tag.result == 'skipped' && startsWith(github.ref, 'refs/tags/v')))
     steps:
       - uses: actions/checkout@v6
+        with:
+          submodules: true
       
       - name: Install Dependencies
         run: |
@@ -114,6 +117,8 @@ jobs:
       (needs.create_tag.result == 'success' || (needs.create_tag.result == 'skipped' && startsWith(github.ref, 'refs/tags/v')))
     steps:
       - uses: actions/checkout@v6
+        with:
+          submodules: true
       
       - name: Install Flatpak tools
         run: |
@@ -172,6 +177,8 @@ jobs:
       (needs.create_tag.result == 'success' || (needs.create_tag.result == 'skipped' && startsWith(github.ref, 'refs/tags/v')))
     steps:
       - uses: actions/checkout@v6
+        with:
+          submodules: true
       
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
@@ -186,6 +193,7 @@ jobs:
             mingw-w64-ucrt-x86_64-python-gobject
             mingw-w64-ucrt-x86_64-gettext
             diffutils
+            zip
           msystem: UCRT64
           
       - name: Build
