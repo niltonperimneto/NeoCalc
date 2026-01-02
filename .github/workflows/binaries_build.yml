@@ -140,7 +140,7 @@ jobs:
                 build-args:
                   - --share=network
               build-commands:
-                - . /usr/lib/sdk/rust-stable/enable.sh && cargo build --release --manifest-path launcher/Cargo.toml
+                - . /usr/lib/sdk/rust-stable/enable.sh && export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 && cargo build --release --manifest-path launcher/Cargo.toml
                 - install -Dm755 target/release/launcher /app/bin/neocalc
                 - mkdir -p /app/share/neocalc
                 - cp -r python /app/share/neocalc/
