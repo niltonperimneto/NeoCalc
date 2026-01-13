@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=NeoCalc
+Comment=A calculator that judges your math skills
+Exec=neocalc
+Icon=com.niltonperimneto.neocalc
+Terminal=false
+Type=Application
+Categories=Utility;Calculator;GTK;
+Keywords=calculator;math;rust;gtk;
+StartupNotify=true

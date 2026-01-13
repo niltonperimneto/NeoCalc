@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.niltonperimneto.neocalc</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>NeoCalc</name>
+  <summary>A calculator that judges your math skills</summary>
+  <description>
+    <p>
+      NeoCalc is a powerful calculator built with Rust and GTK4.
+      It features standard, scientific, programming, and financial modes,
+      all wrapped in a needlessly complex backend that ensures perfectly accurate
+      calculations while silently judging your inability to do mental math.
+    </p>
+    <ul>
+      <li>Rust-powered backend for safety and speed</li>
+      <li>Fraction and Decimal support</li>
+      <li>Customizable themes via CSS</li>
+      <li>Responsive design</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">com.niltonperimneto.neocalc.desktop</launchable>
+  <url type="homepage">https://github.com/niltonperimneto/neocalc</url>
+  <url type="bugtracker">https://github.com/niltonperimneto/neocalc/issues</url>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/niltonperimneto/neocalc/main/screenshots/main.png</image>
+    </screenshot>
+  </screenshots>
+  <releases>
+    <release version="1.0.0" date="2026-01-13"/>
+  </releases>
+  <content_rating type="oars-1.1"/>
+</component>
