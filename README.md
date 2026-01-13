@@ -17,7 +17,16 @@ You can install downloading the flatpak from the release page and running:
 
 ```bash
 flatpak install ./neocalc.flatpak
-```   
+```
+
+### Flatpak Repository (Auto-Updates)
+
+To receive automatic updates, add the repository:
+
+```bash
+flatpak remote-add --user --if-not-exists neocalc https://niltonperimneto.github.io/neocalc/repo
+flatpak install neocalc com.niltonperimneto.neocalc
+```
 
 ## Installation
 If you really want to verify that mass times acceleration equals force (or merely a headache):

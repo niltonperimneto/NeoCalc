@@ -126,7 +126,7 @@ jobs:
           sudo apt-get install -y flatpak flatpak-builder
           flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
-      - name: Build Flatpak
+      - name: Build and Export Flatpak Repo
         run: |
           # Create a simple manifest if it doesn't exist
           if [ ! -f com.niltonperimneto.neocalc.yml ]; then
@@ -157,10 +157,27 @@ jobs:
                   path: .
           EOF
           fi
-          flatpak-builder --user --install-deps-from=flathub --disable-rofiles-fuse --repo=repo build-dir com.niltonperimneto.neocalc.yml
-          flatpak build-bundle repo neocalc.flatpak com.niltonperimneto.neocalc
-      
-      - name: Release Flatpak
+          
+          # Initialize repo directory
+          mkdir -p public/repo
+          
+          # Build and Export to Repo
+          flatpak-builder --user --install-deps-from=flathub --disable-rofiles-fuse --repo=public/repo --force-clean build-dir com.niltonperimneto.neocalc.yml
+          
+          # Generate static deltas for efficient updates
+          flatpak build-update-repo --generate-static-deltas public/repo
+          
+          # Create single file bundle for release
+          flatpak build-bundle public/repo neocalc.flatpak com.niltonperimneto.neocalc
+          
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: public
+          clean: false # Don't wipe existing repo history if possible, though 'public' is fresh here.
+
+      - name: Release Flatpak Bundle
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.define_version.outputs.version }}
