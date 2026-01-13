@@ -47,7 +47,7 @@ impl Calculator {
                         }
                         format!("{}{}", prefix, val_str)
                     }
-                    // _ => "Error: Conversion not supported for this number type".to_string(),
+                    _ => "Error: Conversion not supported for this number type".to_string(),
                 };
                 *buffer = result_str.clone();
                 Ok(result_str)
