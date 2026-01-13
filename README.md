@@ -86,6 +86,57 @@ The theme parser looks for specific `@define-color` lines.
 @define-color destructive_fg_color #282a36;
 ```
 
+### Styling Specific Components
+
+You can style specific parts of the UI using standard CSS selectors.
+
+#### Calculator Grid Buttons
+
+The buttons in the keypad use the `.calc-grid-button` class.
+
+```css
+.calc-grid-button {
+    background-color: #313244;
+    color: #cdd6f4;
+    border: 1px solid #45475a;
+}
+
+.calc-grid-button:hover {
+    background-color: #45475a;
+}
+
+.calc-grid-button:active {
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+}
+```
+
+#### Accented Buttons
+
+Operators often use the `.accent` class.
+
+```css
+.calc-grid-button.accent {
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+}
+
+.calc-grid-button.accent:hover {
+    filter: brightness(1.1);
+}
+```
+
+#### Sidebar
+
+The sidebar (history/variables) uses `.sidebar`.
+
+```css
+.sidebar {
+    background-color: @headerbar_bg_color;
+    border-right: 1px solid @headerbar_border_color;
+}
+```
+
 ## Building (For the Masochists)
 So you want a standalone binary to cherish forever? Fine.
 
