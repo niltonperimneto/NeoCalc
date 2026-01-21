@@ -235,6 +235,10 @@ jobs:
           cp /ucrt64/bin/libgirepository-1.0-*.dll dist/NeoCalc/ || true
           cp /ucrt64/bin/libffi-*.dll dist/NeoCalc/ || true
           cp /ucrt64/bin/zlib1.dll dist/NeoCalc/ || true
+          # Core MinGW Runtime (often missed by dependency walkers)
+          cp /ucrt64/bin/libwinpthread-1.dll dist/NeoCalc/ || true
+          cp /ucrt64/bin/libgcc_s_seh-1.dll dist/NeoCalc/ || true
+          cp /ucrt64/bin/libstdc++-6.dll dist/NeoCalc/ || true
           
           # Copy Resources (Schemas, Icons, etc.)
           mkdir -p dist/NeoCalc/share/glib-2.0/schemas
