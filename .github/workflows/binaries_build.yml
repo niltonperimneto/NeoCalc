@@ -215,6 +215,9 @@ jobs:
           cp -r /ucrt64/share/icons/Adwaita dist/NeoCalc/share/icons/
           cp -r /ucrt64/share/icons/hicolor dist/NeoCalc/share/icons/
           
+          # Copy Locale
+          cp -r locale dist/NeoCalc/
+          
           # Copy GDK Pixbuf Loaders (SVG Support)
           mkdir -p dist/NeoCalc/lib/gdk-pixbuf-2.0/2.10.0/loaders
           cp /ucrt64/lib/gdk-pixbuf-2.0/2.10.0/loaders/*.dll dist/NeoCalc/lib/gdk-pixbuf-2.0/2.10.0/loaders/
