@@ -200,9 +200,14 @@ jobs:
           cp target/release/neocalc-desktop.exe dist/NeoCalc/NeoCalc.exe
           cp -r python dist/NeoCalc/
           
-          # Copy dependencies using ldd (Main Exe + Python Extensions)
-          # We check the main exe AND the _gi extension which is critical for Gtk
-          (ldd target/release/neocalc-desktop.exe && ldd /ucrt64/lib/python3.*/site-packages/gi/_gi*.pyd) | grep '/ucrt64' | awk '{print $3}' | sort | uniq | xargs -I {} cp {} dist/NeoCalc/
+          # Copy dependencies using ldd (Main Exe only)
+          ldd target/release/neocalc-desktop.exe | grep '/ucrt64' | awk '{print $3}' | sort | uniq | xargs -I {} cp {} dist/NeoCalc/
+          
+          # Explicitly copy PyGObject dependencies that ldd might miss from the main exe
+          cp /ucrt64/bin/libgirepository-1.0-*.dll dist/NeoCalc/ || true
+          cp /ucrt64/bin/libffi-*.dll dist/NeoCalc/ || true
+          cp /ucrt64/bin/libintl-*.dll dist/NeoCalc/ || true
+          cp /ucrt64/bin/zlib1.dll dist/NeoCalc/ || true
           
           # Copy Resources (Schemas, Icons, etc.)
           mkdir -p dist/NeoCalc/share/glib-2.0/schemas
