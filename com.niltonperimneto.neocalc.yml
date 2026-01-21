@@ -14,6 +14,9 @@ finish-args:
 modules:
   - name: neocalc
     buildsystem: simple
+    build-options:
+      build-args:
+        - --share=network
     build-commands:
       - . /usr/lib/sdk/rust-stable/enable.sh && export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 && cargo build --release --manifest-path desktop/Cargo.toml
       - install -Dm755 target/release/neocalc-desktop /app/bin/neocalc
