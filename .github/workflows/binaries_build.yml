@@ -200,42 +200,57 @@ jobs:
           cp target/release/neocalc-desktop.exe dist/NeoCalc/NeoCalc.exe
           cp -r python dist/NeoCalc/
           
-          # Recursive Dependency Copy (Exe + Python Extensions)
-          # We use objdump because ldd fails on .pyd in some environments
+          # Recursive Dependency Copy (Exe + Python Extensions + DLLs) - "The Nuclear Option"
+          # We use a while loop to keep finding dependencies until no new files are added.
+          
+          # Initial seed: Copy dependencies of Exe and Pyds
+          echo "Seeding/Scanning initial binaries..."
           for file in target/release/neocalc-desktop.exe /ucrt64/lib/python3.*/site-packages/gi/*.pyd; do
-              echo "Scanning $file..."
+             deps=$(objdump -p "$file" | grep "DLL Name" | awk '{print $3}')
+             for dep in $deps; do
+                 if [ ! -f "dist/NeoCalc/$dep" ]; then
+                     found=$(find /ucrt64/bin -maxdepth 1 -name "$dep" | head -n 1)
+                     if [ -f "$found" ]; then cp "$found" dist/NeoCalc/; fi
+                 fi
+             done
+          done
+
+          echo "Starting Recursive Scan..."
+          count=1
+          while true; do
+              echo "Pass $count..."
+              added_new=0
               
-              # Get direct dependencies
-              deps=$(objdump -p "$file" | grep "DLL Name" | awk '{print $3}')
+              # Find all needed DLLs by all current files
+              needed_dlls=$(objdump -p dist/NeoCalc/*.{exe,dll,pyd} 2>/dev/null | grep "DLL Name" | awk '{print $3}' | sort | uniq)
               
-              for dep in $deps; do
-                  # Find the DLL in /ucrt64/bin
-                  found=$(find /ucrt64/bin -name "$dep" | head -n 1)
-                  
-                  if [ -f "$found" ]; then
-                      # Copy it if checking for existance fails in destination
-                      if [ ! -f "dist/NeoCalc/$dep" ]; then
+              for need in $needed_dlls; do
+                  if [ ! -f "dist/NeoCalc/$need" ]; then
+                      # It's missing from our folder. Look for it in system.
+                      found=$(find /ucrt64/bin -maxdepth 1 -name "$need" | head -n 1)
+                      if [ -f "$found" ]; then
+                          echo "  Found missing dependency: $need"
                           cp "$found" dist/NeoCalc/
-                          
-                          # We need to scan this new DLL for its dependencies too (Recursive-ish one level deep for now)
-                          # A full recursive walker is better but one level usually catches glib/ffi/etc
-                          subdeps=$(objdump -p "$found" | grep "DLL Name" | awk '{print $3}')
-                          for subdep in $subdeps; do
-                              foundsub=$(find /ucrt64/bin -name "$subdep" | head -n 1)
-                              if [ -f "$foundsub" ] && [ ! -f "dist/NeoCalc/$subdep" ]; then
-                                  cp "$foundsub" dist/NeoCalc/
-                              fi
-                          done
+                          added_new=1
                       fi
                   fi
               done
+              
+              if [ "$added_new" -eq "0" ]; then
+                  echo "Stability reached. No new DLLs found."
+                  break
+              fi
+              
+              count=$((count+1))
+              if [ "$count" -gt 15 ]; then
+                  echo "Recursion limit reached. Stopping."
+                  break
+              fi
           done
           
-          # Force copy known troublemakers if missed
           cp /ucrt64/bin/libgirepository-1.0-*.dll dist/NeoCalc/ || true
           cp /ucrt64/bin/libffi-*.dll dist/NeoCalc/ || true
           cp /ucrt64/bin/zlib1.dll dist/NeoCalc/ || true
-          # Core MinGW Runtime (often missed by dependency walkers)
           cp /ucrt64/bin/libwinpthread-1.dll dist/NeoCalc/ || true
           cp /ucrt64/bin/libgcc_s_seh-1.dll dist/NeoCalc/ || true
           cp /ucrt64/bin/libstdc++-6.dll dist/NeoCalc/ || true
