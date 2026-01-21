@@ -3,6 +3,7 @@ use neocalc_backend::neocalc_backend;
 use pyo3::prelude::*;
 use pyo3::types::PyList;
 use std::env;
+use std::ffi::CString;
 use std::path::PathBuf;
 
 #[tokio::main(flavor = "current_thread")]
@@ -46,6 +47,19 @@ async fn run() -> PyResult<()> {
                     // However, setting environment variable PYTHONHOME often works for initialization.
                     unsafe {
                         env::set_var("PYTHONHOME", python_home);
+                    }
+                }
+
+                // Add the executable directory to the DLL search path (Critical for Windows Python 3.8+)
+                // We run this as a small Python snippet immediately after verifying we are in the bundle.
+                let code = format!(
+                    "import os; os.add_dll_directory(r'{}')",
+                    exe_dir.to_string_lossy()
+                );
+                if let Ok(c_code) = CString::new(code) {
+                    let added_dll_res = py.run(&c_code, None, None);
+                    if let Err(e) = added_dll_res {
+                        eprintln!("Warning: Failed to add DLL directory: {}", e);
                     }
                 }
             }
