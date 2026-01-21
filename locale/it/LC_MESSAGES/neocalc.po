@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NeoCalc 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-18 10:00-0300\n"
+"POT-Creation-Date: 2026-01-20 22:47-0300\n"
 "PO-Revision-Date: 2025-12-18 10:00-0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -11,69 +11,152 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-msgid "Could not find 'python_gui' directory. It's gone. Reduced to atoms."
-msgstr "Impossibile trovare la directory 'python_gui'. È andata. Ridotta in atomi."
+#: desktop/src/main.rs:97
+#, fuzzy
+msgid "Could not find 'python' directory. It's gone. Reduced to atoms."
+msgstr ""
+"Impossibile trovare la directory 'python_gui'. È andata. Ridotta in atomi."
 
-msgid "Standard"
-msgstr "Standard"
+#: python/neocalc/ui/dialogs/preferences.py:18
+msgid "Appearance"
+msgstr ""
 
-msgid "Scientific"
-msgstr "Scientifica"
-
-msgid "Themes"
+#: python/neocalc/ui/dialogs/preferences.py:23
+#, fuzzy
+msgid "Theme"
 msgstr "Temi"
 
+#: python/neocalc/ui/dialogs/preferences.py:24
+msgid "Select the visual style of the application."
+msgstr ""
+
+#: python/neocalc/ui/dialogs/preferences.py:29
+msgid "Application Theme"
+msgstr ""
+
+#: python/neocalc/ui/dialogs/preferences.py:35
 msgid "Default"
 msgstr "Predefinito"
 
-msgid "Import Theme..."
+#: python/neocalc/ui/dialogs/preferences.py:58
+#: python/neocalc/styling/manager.py:116
+#, fuzzy
+msgid "Import Theme"
 msgstr "Importa Tema..."
 
-msgid "Keyboard Shortcuts"
-msgstr "Scorciatoie da tastiera"
+#: python/neocalc/ui/dialogs/preferences.py:59
+msgid "Load a custom CSS file."
+msgstr ""
 
-msgid "About"
-msgstr "Informazioni"
+#: python/neocalc/ui/dialogs/about.py:13
+#, fuzzy
+msgid ""
+"The calculator that judges you.\n"
+"(Forked and Broken for educational purposes)"
+msgstr ""
+"La calcolatrice che ti giudica.\n"
+"(Forkata e rotta per scopi educativi)"
 
-msgid "Toggle Sidebar"
-msgstr "Attiva/Disattiva Barra Laterale"
-
-msgid "Calculator"
-msgstr "Calcolatrice"
-
-msgid "The calculator that judges you.\n(Forked & Broken for educational purposes)"
-msgstr "La calcolatrice che ti giudica.\n(Forkata e rotta per scopi educativi)"
-
+#: python/neocalc/ui/dialogs/about.py:19
 msgid "Original Code"
 msgstr "Codice Originale"
 
+#: python/neocalc/ui/dialogs/about.py:20
 msgid "New Code (Rust)"
 msgstr "Nuovo Codice (Rust)"
 
+#: python/neocalc/ui/dialogs/about.py:21
 msgid "Purpose"
 msgstr "Scopo"
 
+#: python/neocalc/ui/dialogs/about.py:21
 msgid "To teach innocent kids Python"
 msgstr "Insegnare Python a bambini innocenti"
 
+#: python/neocalc/ui/dialogs/about.py:21
 msgid "To try to teach me Rust"
 msgstr "Provare a insegnarmi Rust"
 
-msgid "New Calculator"
-msgstr "Nuova Calcolatrice"
+#: python/neocalc/ui/components/header.py:22
+msgid "Toggle Sidebar"
+msgstr "Attiva/Disattiva Barra Laterale"
 
-msgid "Toggle Dark Mode"
+#: python/neocalc/ui/components/header.py:33
+msgid "Standard"
+msgstr "Standard"
+
+#: python/neocalc/ui/components/header.py:34
+msgid "Scientific"
+msgstr "Scientifica"
+
+#: python/neocalc/ui/components/header.py:35
+msgid "Programming"
+msgstr ""
+
+#: python/neocalc/ui/components/header.py:36
+msgid "Financial"
+msgstr ""
+
+#: python/neocalc/ui/components/header.py:38
+#: python/neocalc/ui/components/header.py:49
+#, fuzzy
+msgid "Standard Mode"
+msgstr "Standard"
+
+#: python/neocalc/ui/components/header.py:41
+#, fuzzy
+msgid "Toggle Calculator Mode"
 msgstr "Modalità Scura"
 
-msgid "Switch to Scientific Mode"
-msgstr "Passa a Modalità Scientifica"
+#: python/neocalc/ui/components/header.py:52
+#, fuzzy
+msgid "Scientific Mode"
+msgstr "Scientifica"
 
-msgid "Switch to Standard Mode"
-msgstr "Passa a Modalità Standard"
+#: python/neocalc/ui/components/header.py:55
+msgid "Programming Mode"
+msgstr ""
 
-msgid "Switch to Calculator 1-9"
-msgstr "Passa a Calcolatrice 1-9"
+#: python/neocalc/ui/components/header.py:58
+msgid "Financial Mode"
+msgstr ""
 
-msgid "Show Keyboard Shortcuts"
-msgstr "Mostra Scorciatoie da Tastiera"
+#: python/neocalc/ui/components/header.py:64
+msgid "Preferences"
+msgstr ""
 
+#: python/neocalc/ui/components/header.py:65
+msgid "Keyboard Shortcuts"
+msgstr "Scorciatoie da tastiera"
+
+#: python/neocalc/ui/components/header.py:66
+msgid "About"
+msgstr "Informazioni"
+
+#: python/neocalc/ui/components/header.py:92
+msgid "Variables"
+msgstr ""
+
+#: python/neocalc/ui/components/header.py:113
+#, fuzzy
+msgid "No active calculator"
+msgstr "Nuova Calcolatrice"
+
+#: python/neocalc/ui/components/header.py:120
+msgid "No variables defined"
+msgstr ""
+
+#~ msgid "Calculator"
+#~ msgstr "Calcolatrice"
+
+#~ msgid "Switch to Scientific Mode"
+#~ msgstr "Passa a Modalità Scientifica"
+
+#~ msgid "Switch to Standard Mode"
+#~ msgstr "Passa a Modalità Standard"
+
+#~ msgid "Switch to Calculator 1-9"
+#~ msgstr "Passa a Calcolatrice 1-9"
+
+#~ msgid "Show Keyboard Shortcuts"
+#~ msgstr "Mostra Scorciatoie da Tastiera"

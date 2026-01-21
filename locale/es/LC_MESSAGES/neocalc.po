@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NeoCalc 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-18 10:00-0300\n"
+"POT-Creation-Date: 2026-01-20 22:47-0300\n"
 "PO-Revision-Date: 2025-12-18 10:00-0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -11,70 +11,153 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-msgid "Could not find 'python_gui' directory. It's gone. Reduced to atoms."
-msgstr "No se pudo encontrar el directorio 'python_gui'. Se ha ido. Reducido a átomos."
+#: desktop/src/main.rs:97
+#, fuzzy
+msgid "Could not find 'python' directory. It's gone. Reduced to atoms."
+msgstr ""
+"No se pudo encontrar el directorio 'python_gui'. Se ha ido. Reducido a "
+"átomos."
 
-msgid "Standard"
-msgstr "Estándar"
+#: python/neocalc/ui/dialogs/preferences.py:18
+msgid "Appearance"
+msgstr ""
 
-msgid "Scientific"
-msgstr "Científica"
-
-msgid "Themes"
+#: python/neocalc/ui/dialogs/preferences.py:23
+#, fuzzy
+msgid "Theme"
 msgstr "Temas"
 
+#: python/neocalc/ui/dialogs/preferences.py:24
+msgid "Select the visual style of the application."
+msgstr ""
+
+#: python/neocalc/ui/dialogs/preferences.py:29
+msgid "Application Theme"
+msgstr ""
+
+#: python/neocalc/ui/dialogs/preferences.py:35
 msgid "Default"
 msgstr "Por defecto"
 
-msgid "Import Theme..."
+#: python/neocalc/ui/dialogs/preferences.py:58
+#: python/neocalc/styling/manager.py:116
+#, fuzzy
+msgid "Import Theme"
 msgstr "Importar tema..."
 
-msgid "Keyboard Shortcuts"
-msgstr "Atajos de teclado"
+#: python/neocalc/ui/dialogs/preferences.py:59
+msgid "Load a custom CSS file."
+msgstr ""
 
-msgid "About"
-msgstr "Acerca de"
+#: python/neocalc/ui/dialogs/about.py:13
+#, fuzzy
+msgid ""
+"The calculator that judges you.\n"
+"(Forked and Broken for educational purposes)"
+msgstr ""
+"La calculadora que te juzga.\n"
+"(Forkeada y rota con fines educativos)"
 
-msgid "Toggle Sidebar"
-msgstr "Alternar barra lateral"
-
-msgid "Calculator"
-msgstr "Calculadora"
-
-msgid "The calculator that judges you.\n(Forked & Broken for educational purposes)"
-msgstr "La calculadora que te juzga.\n(Forkeada y rota con fines educativos)"
-
+#: python/neocalc/ui/dialogs/about.py:19
 msgid "Original Code"
 msgstr "Código original"
 
+#: python/neocalc/ui/dialogs/about.py:20
 msgid "New Code (Rust)"
 msgstr "Nuevo código (Rust)"
 
+#: python/neocalc/ui/dialogs/about.py:21
 msgid "Purpose"
 msgstr "Propósito"
 
+#: python/neocalc/ui/dialogs/about.py:21
 msgid "To teach innocent kids Python"
 msgstr "Para enseñar Python a niños inocentes"
 
+#: python/neocalc/ui/dialogs/about.py:21
 msgid "To try to teach me Rust"
 msgstr "Para intentar enseñarme Rust"
 
-msgid "New Calculator"
-msgstr "Nueva calculadora"
+#: python/neocalc/ui/components/header.py:22
+msgid "Toggle Sidebar"
+msgstr "Alternar barra lateral"
 
-msgid "Toggle Dark Mode"
+#: python/neocalc/ui/components/header.py:33
+msgid "Standard"
+msgstr "Estándar"
+
+#: python/neocalc/ui/components/header.py:34
+msgid "Scientific"
+msgstr "Científica"
+
+#: python/neocalc/ui/components/header.py:35
+msgid "Programming"
+msgstr ""
+
+#: python/neocalc/ui/components/header.py:36
+msgid "Financial"
+msgstr ""
+
+#: python/neocalc/ui/components/header.py:38
+#: python/neocalc/ui/components/header.py:49
+#, fuzzy
+msgid "Standard Mode"
+msgstr "Estándar"
+
+#: python/neocalc/ui/components/header.py:41
+#, fuzzy
+msgid "Toggle Calculator Mode"
 msgstr "Alternar modo oscuro"
 
-msgid "Switch to Scientific Mode"
-msgstr "Cambiar a modo científico"
+#: python/neocalc/ui/components/header.py:52
+#, fuzzy
+msgid "Scientific Mode"
+msgstr "Científica"
 
-msgid "Switch to Standard Mode"
-msgstr "Cambiar a modo estándar"
+#: python/neocalc/ui/components/header.py:55
+msgid "Programming Mode"
+msgstr ""
 
-msgid "Switch to Calculator 1-9"
-msgstr "Cambiar a calculadora 1-9"
+#: python/neocalc/ui/components/header.py:58
+msgid "Financial Mode"
+msgstr ""
 
-msgid "Show Keyboard Shortcuts"
-msgstr "Mostrar atajos de teclado"
+#: python/neocalc/ui/components/header.py:64
+msgid "Preferences"
+msgstr ""
 
+#: python/neocalc/ui/components/header.py:65
+msgid "Keyboard Shortcuts"
+msgstr "Atajos de teclado"
 
+#: python/neocalc/ui/components/header.py:66
+msgid "About"
+msgstr "Acerca de"
+
+#: python/neocalc/ui/components/header.py:92
+msgid "Variables"
+msgstr ""
+
+#: python/neocalc/ui/components/header.py:113
+#, fuzzy
+msgid "No active calculator"
+msgstr "Nueva calculadora"
+
+#: python/neocalc/ui/components/header.py:120
+msgid "No variables defined"
+msgstr ""
+
+#~ msgid "Calculator"
+#~ msgstr "Calculadora"
+
+#~ msgid "Switch to Scientific Mode"
+#~ msgstr "Cambiar a modo científico"
+
+#~ msgid "Switch to Standard Mode"
+#~ msgstr "Cambiar a modo estándar"
+
+#~ msgid "Switch to Calculator 1-9"
+#~ msgstr "Cambiar a calculadora 1-9"
+
+#~ msgid "Show Keyboard Shortcuts"
+#~ msgstr "Mostrar atajos de teclado"
