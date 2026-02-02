@@ -86,6 +86,9 @@ jobs:
           
       - name: Build
         run: |
+          # Inject Version
+          echo '__version__ = "${{ needs.define_version.outputs.version }}"' > python/neocalc/_version.py
+          
           export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
           cargo build --release --manifest-path desktop/Cargo.toml
           
@@ -131,6 +134,9 @@ jobs:
 
           # Initialize repo directory
           mkdir -p public/repo
+          
+          # Inject Version (Flatpak build runs in a sandbox, but sources are copied in. We modify source before build)
+          echo '__version__ = "${{ needs.define_version.outputs.version }}"' > python/neocalc/_version.py
           
           # Build and Export to Repo
           flatpak-builder --user --install-deps-from=flathub --disable-rofiles-fuse --repo=public/repo --force-clean build-dir com.niltonperimneto.neocalc.yml
@@ -190,6 +196,9 @@ jobs:
       - name: Build
         shell: msys2 {0}
         run: |
+          # Inject Version
+          echo '__version__ = "${{ needs.define_version.outputs.version }}"' > python/neocalc/_version.py
+          
           export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
           cargo build --release --manifest-path desktop/Cargo.toml
           

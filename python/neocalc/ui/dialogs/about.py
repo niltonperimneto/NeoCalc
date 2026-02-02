@@ -4,10 +4,12 @@ gi.require_version("Adw", "1")
 from gi.repository import Gtk, Adw
 import os
 
+from neocalc._version import __version__
+
 def present_about_dialog(parent):
     dialog = Adw.AboutWindow(transient_for=parent)
     dialog.set_application_name("NeoCalc")
-    dialog.set_version("1.0")
+    dialog.set_version(__version__)
     dialog.set_developer_name("Nilton Perim Neto")
     dialog.set_license_type(Gtk.License.GPL_3_0)
     dialog.set_comments(_("The calculator that judges you.\n(Forked and Broken for educational purposes)"))
