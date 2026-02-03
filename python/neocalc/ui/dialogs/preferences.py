@@ -64,11 +64,40 @@ class PreferencesDialog(Adw.PreferencesWindow):
         icon = Gtk.Image(icon_name="document-open-symbolic")
         import_row.add_suffix(icon)
 
+        ## Calculation Settings
+        calc_group = Adw.PreferencesGroup()
+        calc_group.set_title(_("Calculation"))
+        calc_group.set_description(_("Configure calculation behavior."))
+        page.add(calc_group)
+
+        ## Decimal Mode Switch
+        from ...config import ConfigManager
+        self.config = ConfigManager()
+        
+        decimal_row = Adw.SwitchRow()
+        decimal_row.set_title(_("Decimal Results"))
+        decimal_row.set_subtitle(_("Show results as decimals (0.5) instead of fractions (1/2)."))
+        decimal_row.set_active(self.config.get("use_decimals", False))
+        decimal_row.connect("notify::active", self.on_decimal_mode_changed)
+        calc_group.add(decimal_row)
+
     def on_theme_changed(self, row, param):
         index = row.get_selected()
         if index < len(self.theme_map):
             theme_id = self.theme_map[index]
             self.get_transient_for().set_theme(theme_id)
+
+    def on_decimal_mode_changed(self, row, param):
+        is_active = row.get_active()
+        self.config.set("use_decimals", is_active)
+        
+        main_window = self.get_transient_for()
+        if hasattr(main_window, 'tab_view'):
+            n_pages = main_window.tab_view.get_n_pages()
+            for i in range(n_pages):
+                page = main_window.tab_view.get_nth_page(i)
+                if hasattr(page, 'calc_widget'):
+                    page.calc_widget.logic.set_decimal_mode(is_active)
 
     def on_import_clicked(self, row):
         parent = self.get_transient_for()

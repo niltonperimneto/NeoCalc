@@ -19,6 +19,10 @@ class CalculatorWidget(Gtk.Box):
         self.parent_window = None
         self.logic = CalculatorLogic()
 
+        from ...config import ConfigManager
+        use_decimals = ConfigManager().get("use_decimals", False)
+        self.logic.set_decimal_mode(use_decimals)
+
         self.on_expression_changed = None
         GLib.idle_add(self.update_display)
 

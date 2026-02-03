@@ -1,12 +1,12 @@
-use pyo3::prelude::*;
 use pyo3::exceptions::PyRuntimeError;
+use pyo3::prelude::*;
 use pyo3_async_runtimes::tokio::future_into_py;
 use std::sync::{Arc, Mutex};
 
-use neocalc_core::engine;
-use neocalc_core::{Context, Number, EngineError};
 use crate::utils::lock_mutex;
-use neocalc_core::utils as core_utils; // Rename to avoid conflict with local utils
+use neocalc_core::engine;
+use neocalc_core::utils as core_utils;
+use neocalc_core::{Context, EngineError, Number}; // Rename to avoid conflict with local utils
 
 /// The interface between Python (Dynamic Bliss) and Rust (Static Pain).
 #[pyclass]
@@ -19,6 +19,8 @@ pub struct Calculator {
     input_buffer: Arc<Mutex<String>>,
     /* Stores variables */
     variables: Arc<Mutex<Context>>,
+    /* Configuration: Use decimals instead of fractions */
+    use_decimals: Arc<Mutex<bool>>,
 }
 
 impl Calculator {
@@ -74,6 +76,7 @@ impl Calculator {
             history: Arc::new(Mutex::new(Vec::new())),
             input_buffer: Arc::new(Mutex::new(String::from("0"))),
             variables: Arc::new(Mutex::new(Context::new())),
+            use_decimals: Arc::new(Mutex::new(false)),
         }
     }
 
@@ -132,8 +135,10 @@ impl Calculator {
         let mut context = lock_mutex(&self.variables)?;
         let res = self.evaluate_internal(&expr_to_eval, &mut context);
 
+        let use_decimals = *self.use_decimals.lock().unwrap();
+
         let output = match &res {
-            Ok(n) => core_utils::format_number(n.clone()),
+            Ok(n) => core_utils::format_number(n.clone(), use_decimals),
             Err(e) => e.to_string(),
         };
 
@@ -172,6 +177,7 @@ impl Calculator {
         let expr_for_task = buffer_val.clone();
         let history = self.history.clone();
         let input_buffer = self.input_buffer.clone();
+        let use_decimals_arc = self.use_decimals.clone();
 
         future_into_py(py, async move {
             let res = tokio::task::spawn_blocking(move || {
@@ -181,8 +187,10 @@ impl Calculator {
             .await
             .unwrap();
 
+            let use_decimals = *use_decimals_arc.lock().unwrap();
+
             let output = match &res {
-                Ok(n) => core_utils::format_number(n.clone()),
+                Ok(n) => core_utils::format_number(n.clone(), use_decimals),
                 Err(e) => e.to_string(),
             };
 
@@ -229,13 +237,14 @@ impl Calculator {
         // Clone context to ensure preview doesn't modify actual state (if we had mutable ops)
         let mut context_clone = context_guard.clone();
         drop(context_guard); // Release lock immediately after cloning (though clone might take a microsecond)
-        
+
         // Actually, if evaluate is running, we won't get the lock at all.
         // So we return "...".
-        
+
         let res = engine::evaluate(&expression, &mut context_clone);
+        let use_decimals = *self.use_decimals.lock().unwrap();
         match res {
-            Ok(n) => Ok(core_utils::format_number(n)),
+            Ok(n) => Ok(core_utils::format_number(n, use_decimals)),
             Err(_) => Ok("".to_string()),
         }
     }
@@ -245,10 +254,18 @@ impl Calculator {
         let mut result = std::collections::HashMap::new();
         for scope in &context.scopes {
             for (k, v) in scope {
-                result.insert(k.clone(), core_utils::format_number((**v).clone()));
+                // Variables always use default formatting? Or should they respect the setting?
+                // Let's respect setting for consistency.
+                let use_dec = *self.use_decimals.lock().unwrap();
+                result.insert(k.clone(), core_utils::format_number((**v).clone(), use_dec));
             }
         }
         Ok(result)
     }
-}
 
+    fn set_decimal_mode(&self, enabled: bool) -> PyResult<()> {
+        let mut mode = lock_mutex(&self.use_decimals)?;
+        *mode = enabled;
+        Ok(())
+    }
+}

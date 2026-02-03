@@ -98,3 +98,9 @@ class CalculatorLogic:
         Set buffer directly.
         """
         self._calc.set_expression(text)
+
+    def set_decimal_mode(self, enabled: bool) -> None:
+        """
+        Enable or disable decimal display mode.
+        """
+        self._calc.set_decimal_mode(enabled)
