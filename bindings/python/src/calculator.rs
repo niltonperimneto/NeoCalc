@@ -11,16 +11,13 @@ use neocalc_core::{Context, EngineError, Number}; // Rename to avoid conflict wi
 /// The interface between Python (Dynamic Bliss) and Rust (Static Pain).
 #[pyclass]
 #[derive(Clone, Default)]
-#[allow(deprecated)] // Ignore deprecations during refactor if any
 pub struct Calculator {
-    /* Stores the history of calculations as a list of strings */
+    /// Stores the history of calculations as a list of strings
     history: Arc<Mutex<Vec<String>>>,
-    /* Stores the current input value being typed or displayed */
+    /// Stores the current input value being typed or displayed
     input_buffer: Arc<Mutex<String>>,
-    /* Stores variables */
+    /// Stores variables and user-defined functions
     variables: Arc<Mutex<Context>>,
-    /* Configuration: Use decimals instead of fractions */
-    use_decimals: Arc<Mutex<bool>>,
 }
 
 impl Calculator {
@@ -71,12 +68,10 @@ impl Calculator {
 impl Calculator {
     #[new]
     fn new() -> Self {
-        /* Initialize a new Calculator with empty history and "0" as input */
         Calculator {
             history: Arc::new(Mutex::new(Vec::new())),
             input_buffer: Arc::new(Mutex::new(String::from("0"))),
             variables: Arc::new(Mutex::new(Context::new())),
-            use_decimals: Arc::new(Mutex::new(false)),
         }
     }
 
@@ -252,11 +247,5 @@ impl Calculator {
             }
         }
         Ok(result)
-    }
-
-    fn set_decimal_mode(&self, enabled: bool) -> PyResult<()> {
-        let mut mode = lock_mutex(&self.use_decimals)?;
-        *mode = enabled;
-        Ok(())
     }
 }
