@@ -23,8 +23,9 @@ class CalculatorGrid(Gtk.Grid):
     """Base class for calculator grids handling common button actions."""
 
     def __init__(self, calculator_window, **kwargs):
-        super().__init__(row_spacing=3, column_spacing=3, **kwargs)
+        super().__init__(row_spacing=1, column_spacing=1, **kwargs)
         self.calculator = calculator_window
+        self.set_halign(Gtk.Align.FILL)
 
     def create_buttons(self, buttons: List[GridButton]):
         """Creates buttons from a list of GridButton objects and attaches them to the grid."""
@@ -40,7 +41,7 @@ class CalculatorGrid(Gtk.Grid):
             button.connect("clicked", btn_def.callback)
 
             self._apply_button_styles(button, btn_def)
-            self._apply_button_layout(button)
+            self._apply_button_layout(button, btn_def)
 
             self.attach(button, btn_def.col, btn_def.row, btn_def.width, btn_def.height)
 
@@ -55,10 +56,12 @@ class CalculatorGrid(Gtk.Grid):
         for style in btn_def.style_classes:
             button.add_css_class(style)
 
-    def _apply_button_layout(self, button):
+    def _apply_button_layout(self, button, btn_def: GridButton):
         """Configures button expansion and sizing."""
         button.set_hexpand(True)
         button.set_vexpand(True)
+        button.set_halign(Gtk.Align.FILL)
+        button.set_valign(Gtk.Align.FILL)
 
     def on_button_clicked(self, button):
         """Handle standard digit and operator clicks."""

@@ -5,7 +5,6 @@ from gi.repository import Gtk, Adw, Gio, GLib, Gdk
 import os
 
 from ..dialogs.about import present_about_dialog
-from ..widgets.calculator import CalculatorWidget
 from ...styling.manager import StyleManager
 from ...core.actions import ActionRegistry
 from ..components.sidebar import SidebarView
@@ -17,8 +16,8 @@ class Calculator(Adw.ApplicationWindow):
     def __init__(self, app):
         super().__init__(application=app)
         self.set_title("NeoCalc")
-        self.set_default_size(450, 600)
-        self.set_size_request(430, 500)
+        self.set_default_size(300, 480)
+        self.set_size_request(260, 380)
         self.set_resizable(True)
 
         ## Initialize registry for handling user actions and shortcuts
@@ -42,22 +41,15 @@ class Calculator(Adw.ApplicationWindow):
         StyleManager.load_css()
 
     def setup_layout(self):
-        """Initializes the main window layout using OverlaySplitView."""
-        self.split_view = Adw.OverlaySplitView()
-        self.split_view.set_show_sidebar(False)
-
-        ## Automatically collapse the sidebar if the window width is small (< 600px)
-        breakpoint = Adw.Breakpoint.new(
-            Adw.BreakpointCondition.new_length(Adw.BreakpointConditionLengthType.MAX_WIDTH, 600, Adw.LengthUnit.SP)
-        )
-        breakpoint.add_setter(self.split_view, "collapsed", True)
-        self.add_breakpoint(breakpoint)
-
-        self.set_content(self.split_view)
-
-        ## Initialize the sidebar view and attach it to the split view
+        """Initializes the main window layout without split view for now."""
+        # Create a simple box to hold sidebar and content
+        self.main_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        self.set_content(self.main_box)
+        
+        ## Initialize the sidebar view (hidden by default)
         self.sidebar_view = SidebarView(self)
-        self.split_view.set_sidebar(self.sidebar_view)
+        self.sidebar_view.set_visible(False)
+        self.main_box.append(self.sidebar_view)
 
         ## Keep a reference to the sidebar list box
         self.sidebar_list = self.sidebar_view.sidebar_list
@@ -70,16 +62,16 @@ class Calculator(Adw.ApplicationWindow):
 
         ## Create and add the header bar (contains window controls and menu)
         self.header_view = HeaderView(self)
-
         toolbar_view.add_top_bar(self.header_view)
 
         ## Main container for calculator content
         content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        content_box.set_hexpand(True)
+        content_box.set_vexpand(True)
 
         ## Container for the display area (where numbers are shown)
         calc_header = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         calc_header.add_css_class("calculator-header-extension")
-        ## Allow the header to expand vertically to fill space if needed
         calc_header.set_vexpand(True)
 
         ## Stack to switch between different calculator displays (standard/scientific)
@@ -91,8 +83,6 @@ class Calculator(Adw.ApplicationWindow):
 
         ## Tab view for handling multiple open calculator instances
         self.tab_view = Adw.TabView()
-        ## Tab view should not expand vertically here as it's just the container logic
-        ## But practically, this holds the keypad widget which is in the page content
         self.tab_view.set_vexpand(True)
         self.tab_view.set_hexpand(True)
         content_box.append(self.tab_view)
@@ -100,14 +90,13 @@ class Calculator(Adw.ApplicationWindow):
         ## Set the main content of the toolbar view
         toolbar_view.set_content(content_box)
 
-        ## Wrap in a NavigationPage (required for split view content)
-        nav_page = Adw.NavigationPage(child=toolbar_view, title="Calculator")
-        self.split_view.set_content(nav_page)
+        ## Add to main box
+        self.main_box.append(toolbar_view)
 
     def on_toggle_sidebar(self, button):
-        """Toggles the sidebar visibility, letting AdwOverlaySplitView handle the animation/mode."""
-        current_state = self.split_view.get_show_sidebar()
-        self.split_view.set_show_sidebar(not current_state)
+        """Toggles the sidebar visibility."""
+        current_visible = self.sidebar_view.get_visible()
+        self.sidebar_view.set_visible(not current_visible)
 
     def setup_keyboard_controller(self):
 
@@ -150,6 +139,10 @@ class Calculator(Adw.ApplicationWindow):
         shortcuts_action.connect("activate", self.show_shortcuts)
         self.add_action(shortcuts_action)
 
+        vars_action = Gio.SimpleAction.new("show_variables", None)
+        vars_action.connect("activate", self.show_variables)
+        self.add_action(vars_action)
+
     def show_preferences(self, action, param):
         dialog = PreferencesDialog(self)
         dialog.present()
@@ -160,6 +153,16 @@ class Calculator(Adw.ApplicationWindow):
     def show_shortcuts(self, action, param):
         from ..dialogs.shortcuts import show_shortcuts_dialog
         show_shortcuts_dialog(self)
+
+    def show_variables(self, action, param):
+        """Show variables dialog."""
+        page = self.tab_view.get_selected_page()
+        if not page or not hasattr(page, 'calc_widget'):
+            return
+        
+        from ..dialogs.variables import VariablesDialog
+        dialog = VariablesDialog(self, page.calc_widget)
+        dialog.present()
 
     def on_set_theme_action(self, action, param):
         theme_id = param.get_string()

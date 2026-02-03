@@ -10,7 +10,6 @@ class SidebarView(Adw.NavigationPage):
 
         super().__init__(title="Calculators")
         self.main_window = main_window
-        self.set_size_request(280, -1)
         self.add_css_class("sidebar")
         self.setup_ui()
 
@@ -18,12 +17,13 @@ class SidebarView(Adw.NavigationPage):
         toolbar_view = Adw.ToolbarView()
 
         sidebar_header = Adw.HeaderBar()
+        sidebar_header.set_show_title(False)  # Hide title but keep NavigationPage title set
         sidebar_header.set_show_end_title_buttons(False)
         sidebar_header.set_show_start_title_buttons(False)
 
         add_btn = Gtk.Button(icon_name="list-add-symbolic")
         add_btn.set_tooltip_text("New Calculator")
-        add_btn.connect("clicked", lambda b: self.main_window.add_calculator_instance())
+        add_btn.connect("clicked", lambda _: self.main_window.add_calculator_instance())
         sidebar_header.pack_end(add_btn)
 
         toolbar_view.add_top_bar(sidebar_header)

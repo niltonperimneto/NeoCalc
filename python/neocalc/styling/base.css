@@ -1,20 +1,42 @@
 .calc-grid-button {
-    min-width: 10px;
-    min-height: 36px;
-    font-size: 0.9em;
-    border-radius: 6px;
-    padding: 0;
-    margin: 0;
+    min-width: 42px;
+    min-height: 42px;
+    font-size: 1em;
+    border-radius: 8px;
+    padding: 4px;
+    margin: 2px;
+    transition: all 0.15s ease-in-out;
+}
 
+.calc-grid-button:hover {
+    background-color: alpha(@text_color, 0.08);
+}
+
+.calc-grid-button:active {
+    background-color: alpha(@text_color, 0.15);
+    transform: scale(0.98);
 }
 
 .calc-operator-button {
-    min-width: 45px;
-    min-height: 40px;
-    font-size: 1.1em;
-    border-radius: 6px;
-    padding: 0;
+    min-width: 42px;
+    min-height: 42px;
+    font-size: 1em;
+    border-radius: 8px;
+    padding: 4px;
+    margin: 2px;
+    background-color: alpha(@accent_bg_color, 0.12);
+    color: @accent_color;
+    font-weight: 600;
+    transition: all 0.15s ease-in-out;
+}
 
+.calc-operator-button:hover {
+    background-color: alpha(@accent_bg_color, 0.22);
+}
+
+.calc-operator-button:active {
+    background-color: alpha(@accent_bg_color, 0.35);
+    transform: scale(0.98);
 }
 
 .header-btn {
@@ -26,9 +48,20 @@
     background: transparent;
 }
 
+/* Compact header bar styling */
+headerbar {
+    min-height: 36px;
+    padding: 0 4px;
+}
+
+headerbar button {
+    padding: 4px 6px;
+    margin: 0 1px;
+}
+
 .center-dropdown {
-    font-size: 15px;
-    min-width: 120px;
+    font-size: 14px;
+    /* min-width removed to allow compact header */
     min-height: 32px;
     border-radius: 6px;
     padding: 0 8px;
@@ -52,10 +85,12 @@
 }
 
 .calculator-display-header {
-    background-color: @headerbar_bg_color;
-
-    padding: 6px 12px;
-    min-height: 64px;
+    background-color: alpha(@headerbar_bg_color, 0.5);
+    margin: 2px;
+    border-radius: 6px;
+    padding: 4px 8px;
+    min-height: 48px;
+    box-shadow: inset 0 1px 2px alpha(black, 0.05);
 }
 
 .overlay {
@@ -67,13 +102,16 @@
 }
 
 .calc-entry-display {
-    font-family: "Adwaita Sans";
-    font-size: 48px;
-    font-weight: 300;
-    padding: 8px 0;
+    font-family: "Adwaita Mono", "JetBrains Mono", "Fira Code", monospace;
+    font-size: 32px;
+    font-weight: 400;
+    font-feature-settings: "tnum" 1;
+    /* Tabular (fixed-width) numbers */
+    padding: 8px 4px;
     background-color: transparent;
     border: none;
     color: @text_color;
+    letter-spacing: 0.02em;
 }
 
 .calc-entry-display:focus {
@@ -130,13 +168,14 @@
 }
 
 .calc-preview {
-    font-family: "Adwaita Sans";
-    font-size: 24px;
-    font-weight: 300;
-    padding: 0 8px;
-    min-height: 30px;
-    color: @text_color;
-    opacity: 0.5;
+    font-family: "Adwaita Mono", "JetBrains Mono", "Fira Code", monospace;
+    font-size: 18px;
+    font-weight: 400;
+    font-feature-settings: "tnum" 1;
+    padding: 0 4px;
+    min-height: 24px;
+    color: @accent_color;
+    opacity: 0.7;
 }
 
 .calc-history-list {

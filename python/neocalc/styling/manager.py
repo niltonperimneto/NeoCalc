@@ -11,6 +11,13 @@ logger = logging.getLogger(__name__)
 class StyleManager:
     _base_provider = None
     _theme_provider = None
+    current_theme = "default"
+
+    @staticmethod
+    def apply_theme(theme_id):
+        """Apply a theme by ID and persist the selection."""
+        StyleManager.current_theme = theme_id
+        StyleManager.load_css(theme_id)
 
     ## Return the full path to the directory containing theme CSS files
     @staticmethod

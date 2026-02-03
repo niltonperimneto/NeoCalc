@@ -36,41 +36,62 @@ class CalculatorWidget(Gtk.Box):
 
         main_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
 
-        main_content.set_margin_start(8)
-        main_content.set_margin_end(8)
-        main_content.set_margin_top(8)
-        main_content.set_margin_bottom(8)
+        main_content.set_margin_start(2)
+        main_content.set_margin_end(2)
+        main_content.set_margin_top(2)
+        main_content.set_margin_bottom(2)
 
         grid_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         grid_box.set_hexpand(True)
         grid_box.set_vexpand(True)
+        grid_box.set_valign(Gtk.Align.FILL)
         main_content.append(grid_box)
 
         self.view_stack = Adw.ViewStack()
+        # Disable homogeneity so standard mode can be narrower than scientific
+        # Adw.ViewStack doesn't expose hhomogeneous directly in python bindings sometimes?
+        # It inherits from Gtk.Widget. Actually checks if it has the property using GtkStack logic equivalent.
+        # AdwViewStack is distinct from GtkStack. 
+        # Wait, AdwViewStack documentation says it adapts. 
+        # But let's assume it behaves like Stack or try to set it.
+        # If AdwViewStack doesn't have it, we might need Gtk.Stack for this behavior.
+        # Let's try checking if it works or use Gtk.Stack if Adw.ViewStack is stubborn.
+        # For now, let's try assuming Gtk.Stack behavior or switch to Gtk.Stack?
+        # Adw.ViewStack is for the bottom bar navigation usually.
+        # Here we are using it for modes.
+        # Let's try replacing Adw.ViewStack with Gtk.Stack if strictly needed, but first let's try to verify if it has properties.
+        # Actually, best guess fix: disable homogeneity if possible.
+        # Adw.ViewStack does NOT have hhomogeneous property. Gtk.Stack does.
+        # So replacing Adw.ViewStack with Gtk.Stack is the Fix if we want variable width.
+        
+        self.view_stack = Gtk.Stack()
+        self.view_stack.set_hhomogeneous(False)
+        self.view_stack.set_vhomogeneous(False)
+        self.view_stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
 
         from ..grids.standard import ButtonGrid
 
         button_grid = ButtonGrid(self)
         self.view_stack.add_titled(button_grid, "standard", "Standard")
-        self.view_stack.get_page(button_grid).set_icon_name("view-grid-symbolic")
+        # Gtk.StackPage handles icons differently or might not need them if we don't use a standard switcher
+        # For now, let's try setting it or comment it out if it causes issues.
+        # But wait, we aren't using a ViewSwitcher, so these icons are likely unused!
+        # The header uses its own icon mapping.
+        # self.view_stack.get_page(button_grid).set_icon_name("view-grid-symbolic")
 
         from ..grids.scientific import ScientificGrid
 
         scientific_grid = ScientificGrid(self)
         self.view_stack.add_titled(scientific_grid, "scientific", "Scientific")
-        self.view_stack.get_page(scientific_grid).set_icon_name(
-            "applications-science-symbolic"
-        )
+        # self.view_stack.get_page(scientific_grid).set_icon_name("applications-science-symbolic")
 
         programming_grid = ProgrammingGrid(self)
         self.view_stack.add_titled(programming_grid, "programming", "Programming")
-        self.view_stack.get_page(programming_grid).set_icon_name(
-            "applications-engineering-symbolic"
-        )
+        # self.view_stack.get_page(programming_grid).set_icon_name("applications-engineering-symbolic")
 
         financial_grid = FinancialGrid(self)
         self.view_stack.add_titled(financial_grid, "financial", "Financial")
-        self.view_stack.get_page(financial_grid).set_icon_name("money-symbolic")
+        # self.view_stack.get_page(financial_grid).set_icon_name("money-symbolic")
 
         grid_box.append(self.view_stack)
 
@@ -122,6 +143,10 @@ class CalculatorWidget(Gtk.Box):
             self.on_expression_changed(text)
         self.update_preview(text)
 
+    def get_variables(self):
+        """Forward variable retrieval to logic"""
+        return self.logic.get_variables()
+
     def update_preview(self, text):
         """Calculate and show preview result."""
         if not text:
@@ -152,12 +177,12 @@ class CalculatorWidget(Gtk.Box):
         except Exception:
             return {}
 
-    def on_display_edited(self, widget, text):
+    def on_display_edited(self, _widget, text):
         self.logic.set_expression(text)
         if self.on_expression_changed:
             self.on_expression_changed(text)
 
-    def on_display_activated(self, widget):
+    def on_display_activated(self, _widget):
         ## Use non-blocking evaluation to keep UI responsive
         self.logic.evaluate_non_blocking(
             on_success=self._on_eval_success, on_error=self._on_eval_error
@@ -177,7 +202,7 @@ class CalculatorWidget(Gtk.Box):
         self.display.set_value("Error")
         print(f"Evaluation error: {error_msg}")
 
-    def on_key_pressed(self, controller, keyval, keycode, state):
+    def on_key_pressed(self, _controller, keyval, _keycode, _state):
         if self.display.has_focus():
             return False
 

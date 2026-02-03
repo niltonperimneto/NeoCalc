@@ -1,6 +1,6 @@
 import gi
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk, GObject
+from gi.repository import Gtk, GObject, Pango as pango
 
 class CalculatorDisplay(Gtk.Box):
     """
@@ -91,6 +91,8 @@ class CalculatorDisplay(Gtk.Box):
                 row = Gtk.ListBoxRow()
                 label = Gtk.Label(label=item_text)
                 label.set_xalign(1.0)
+                label.set_ellipsize(pango.EllipsizeMode.END)
+                label.set_max_width_chars(1) # Allow shrinking
                 label.add_css_class("calc-history-item")
                 row.set_child(label)
                 self.history_list.append(row)

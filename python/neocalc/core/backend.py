@@ -3,7 +3,6 @@ import neocalc_backend
 from gi.repository import GLib
 import asyncio
 import threading
-import concurrent.futures
 
 from neocalc_backend import DisplayManager, CalculatorManager
 
@@ -98,6 +97,12 @@ class CalculatorLogic:
         Set buffer directly.
         """
         self._calc.set_expression(text)
+
+    def get_variables(self) -> dict:
+        """
+        Get all defined variables.
+        """
+        return self._calc.get_variables()
 
     def set_decimal_mode(self, enabled: bool) -> None:
         """

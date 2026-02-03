@@ -12,16 +12,18 @@ def present_about_dialog(parent):
     dialog.set_version(__version__)
     dialog.set_developer_name("Nilton Perim Neto")
     dialog.set_license_type(Gtk.License.GPL_3_0)
-    dialog.set_comments(_("The calculator that judges you.\n(Forked and Broken for educational purposes)"))
-    dialog.set_website("https://github.com/niltonperimneto/NeoCalc")
-    dialog.set_issue_url("https://github.com/niltonperimneto/NeoCalc/issues")
+    dialog.set_comments(_("A modern, powerful calculator built with GTK4 and Rust.\nDesigned for GNOME."))
+    dialog.set_website("https://github.com/niltonperimneto/neocalc")
+    dialog.set_issue_url("https://github.com/niltonperimneto/neocalc/issues")
 
     dialog.set_application_icon("com.nilton.neocalc")
 
-    dialog.add_credit_section(_("Original Code"), ["Nilton Perim Neto"])
-    dialog.add_credit_section(_("New Code (Rust)"), ["Nilton Perim Neto"])
-    dialog.add_credit_section(_("Purpose"), [_("To teach innocent kids Python"), _("To try to teach me Rust")])
-
+    dialog.add_credit_section(_("Created By"), ["Nilton Perim Neto"])
+    dialog.add_credit_section(_("Contributions"), ["Welcome at GitHub!"])
+    
+    # Add a specific link for contributions if needed, or rely on website
+    # Adw.AboutWindow shows website as "Website" button.
+    
     dialog.set_copyright("© 2025 Nilton Perim Neto")
 
     dialog.present()
