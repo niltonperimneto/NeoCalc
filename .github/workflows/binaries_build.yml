@@ -164,18 +164,20 @@ jobs:
           # Create single-file bundle for direct download
           flatpak build-bundle public/repo neocalc.flatpak com.niltonperimneto.neocalc
       
-      - name: Sign Repository (if GPG key available)
-        if: ${{ secrets.GPG_PRIVATE_KEY != '' }}
+      - name: Sign and Update Repository
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
         run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
-          flatpak build-update-repo --gpg-sign=${{ secrets.GPG_KEY_ID }} \
-            --generate-static-deltas --prune --prune-depth=3 public/repo
-      
-      - name: Update Repository (unsigned)
-        if: ${{ secrets.GPG_PRIVATE_KEY == '' }}
-        run: |
-          # Generate delta updates for efficient user downloads and prune old commits
-          flatpak build-update-repo --generate-static-deltas --prune --prune-depth=3 public/repo
+          if [ -n "$GPG_PRIVATE_KEY" ]; then
+            echo "GPG key found, signing repository..."
+            echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+            flatpak build-update-repo --gpg-sign="$GPG_KEY_ID" \
+              --generate-static-deltas --prune --prune-depth=3 public/repo
+          else
+            echo "No GPG key configured, updating repository without signing..."
+            flatpak build-update-repo --generate-static-deltas --prune --prune-depth=3 public/repo
+          fi
       
       - name: Generate flatpakrepo file
         run: |
