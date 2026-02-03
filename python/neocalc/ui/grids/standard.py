@@ -1,17 +1,11 @@
 # -*- coding: utf-8 -*-
-import gi
-
-gi.require_version("Gtk", "4.0")
-
-from gi.repository import Gtk
-
 from .base import CalculatorGrid, GridButton
+
 
 class ButtonGrid(CalculatorGrid):
     def __init__(self, callbacks=None):
         super().__init__(callbacks)
-        self.set_row_homogeneous(True)
-        self.set_column_homogeneous(True)
+
 
         buttons = [
             # Row 0

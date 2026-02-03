@@ -1,18 +1,10 @@
 # -*- coding: utf-8 -*-
-import gi
-
-gi.require_version("Gtk", "4.0")
-
-from gi.repository import Gtk
-
 from .base import CalculatorGrid, GridButton
 
 
 class ProgrammingGrid(CalculatorGrid):
     def __init__(self, calculator_window):
         super().__init__(calculator_window)
-        self.set_row_homogeneous(True)
-        self.set_column_homogeneous(True)
 
         buttons = [
             # Row 0
@@ -29,27 +21,7 @@ class ProgrammingGrid(CalculatorGrid):
             ),
             GridButton("÷", self.on_button_clicked, 5, 0),
             GridButton("×", self.on_button_clicked, 6, 0),
-            GridButton("⌫", self.on_backspace_clicked, 7, 0, style_classes=["destructive-action", "destructive"]), 
-            # Standard grid uses "C". Scientific has "C".
-            # Backspace usually needs specific handler or just inserts char if mapped.
-            # Base.py doesn't have on_backspace_clicked.
-            # I assume "⌫" inserts that char, which parser likely rejects.
-            # Wait, `standard.py` has "C". No backspace.
-            # `financial.py` has "⌫".
-            # I should implementing backspace logic if I keep it.
-            # For now I will keep it as is but note it probably inserts garbage unless logic.js handles it?
-            # Re-checking base.py... no backspace handler.
-            # I should suggest removing it or implementing it. 
-            # I'll implement it as "C" (Clear) for now to be safe or just standard "C" only.
-            # Actually, previous programming.py had "⌫". I'll keep it but map to clear? Or separate?
-            # Let's map to on_button_clicked for now to reproduce behavior, then I can fix backspace logic task?
-            # No, user asked for improvements.
-            # Improvement: Remove backspace if not implemented, or map to C.
-            # I'll map "⌫" to on_button_clicked but it will likely fail.
-            # Wait, standard calc usually has backspace.
-            # Does `Calculator` logic handle `⌫`?
-            # I'll check `calculator.py`.
-            # If not, I'll replace with nothing or C.
+            GridButton("⌫", self.on_backspace_clicked, 7, 0, style_classes=["destructive-action", "destructive"]),
 
             # Row 1
             GridButton("band", self.on_func_clicked, 0, 1, insert_text="band("),
@@ -73,14 +45,7 @@ class ProgrammingGrid(CalculatorGrid):
             GridButton("Hex", self.on_convert_clicked, 0, 3),  # Base conversion
             GridButton("Bin", self.on_convert_clicked, 1, 3),
             GridButton("B", self.on_button_clicked, 2, 3),
-            GridButton("C", self.on_button_clicked, 3, 3), # This is Hex param C, not Clear. Confusion risk!
-            # Hex C vs Clear C.
-            # Clear is at 4,0. Hex C is at 3,3.
-            # It works IF the label "C" is distinguished by callback?
-            # Yes, grid buttons logic handles it by separate definitions.
-            # Visual confusion: Yes.
-            # Maybe label Hex C as "C " or "0xC"? Or just trust context.
-            # I'll leave labeled "C".
+            GridButton("C", self.on_button_clicked, 3, 3), # Hex digit C
             GridButton("1", self.on_button_clicked, 4, 3),
             GridButton("2", self.on_button_clicked, 5, 3),
             GridButton("3", self.on_button_clicked, 6, 3),

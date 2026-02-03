@@ -1,27 +1,17 @@
 # -*- coding: utf-8 -*-
-import gi
-
-gi.require_version("Gtk", "4.0")
-
-from gi.repository import Gtk
-
 from .base import CalculatorGrid, GridButton
 
 
 class FinancialGrid(CalculatorGrid):
     def __init__(self, calculator_window):
         super().__init__(calculator_window)
-        self.set_row_homogeneous(True)
-        self.set_column_homogeneous(True)
-
-        from .base import GridButton
 
         buttons = [
             # Row 0
             GridButton("(", self.on_button_clicked, 0, 0),
             GridButton(")", self.on_button_clicked, 1, 0),
             GridButton("%", self.on_button_clicked, 2, 0),
-            GridButton("abs", self.on_func_clicked, 3, 0, insert_text="abs("), # Moved from 3,3 to replace ^
+            GridButton("abs", self.on_func_clicked, 3, 0, insert_text="abs("),
             GridButton(
                 "C",
                 self.on_clear_clicked,
@@ -46,7 +36,7 @@ class FinancialGrid(CalculatorGrid):
             GridButton("rate", self.on_func_clicked, 0, 2, insert_text="rate("),
             GridButton("npv", self.on_func_clicked, 1, 2, insert_text="npv("),
             GridButton("irr", self.on_func_clicked, 2, 2, insert_text="irr("),
-            GridButton("^", self.on_button_clicked, 3, 2), # Moved from 3,0 to match Scientific
+            GridButton("^", self.on_button_clicked, 3, 2),
             GridButton("4", self.on_button_clicked, 4, 2),
             GridButton("5", self.on_button_clicked, 5, 2),
             GridButton("6", self.on_button_clicked, 6, 2),
@@ -55,7 +45,7 @@ class FinancialGrid(CalculatorGrid):
             GridButton("ln", self.on_func_clicked, 0, 3, insert_text="ln("),
             GridButton("log", self.on_func_clicked, 1, 3, insert_text="log("),
             GridButton("e", self.on_button_clicked, 2, 3),
-            GridButton("√", self.on_func_clicked, 3, 3, insert_text="sqrt("), # Moved from 3,2 to match Scientific
+            GridButton("√", self.on_func_clicked, 3, 3, insert_text="sqrt("),
             GridButton("1", self.on_button_clicked, 4, 3),
             GridButton("2", self.on_button_clicked, 5, 3),
             GridButton("3", self.on_button_clicked, 6, 3),

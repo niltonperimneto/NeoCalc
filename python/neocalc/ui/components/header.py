@@ -43,18 +43,15 @@ class HeaderView(Adw.Bin):
         # Actually SplitButton has no label property directly exposed like Button sometimes.
         # But wait, did I set a label? No, just icon_name set in init.
         
-        # Pack at start for compact layout
-        self.header_bar.pack_start(self.split_button)
-        
-        # Use empty label as title widget to hide default app title
-        self.header_bar.set_title_widget(Gtk.Label(label=""))
+        # Place in the center as title widget
+        self.header_bar.set_title_widget(self.split_button)
 
     def set_mode_display(self, mode_id):
         icons = {
             "standard": "view-grid-symbolic",
             "scientific": "applications-science-symbolic",
             "programming": "applications-engineering-symbolic",
-            "financial": "money-symbolic"
+            "financial": "network-cellular-signal-excellent-symbolic"
         }
         self.split_button.set_icon_name(icons.get(mode_id, "view-grid-symbolic"))
 

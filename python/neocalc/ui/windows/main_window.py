@@ -20,38 +20,41 @@ class Calculator(Adw.ApplicationWindow):
         self.set_size_request(260, 380)
         self.set_resizable(True)
 
-        ## Initialize registry for handling user actions and shortcuts
+        # Initialize registry for handling user actions and shortcuts
         self.action_registry = ActionRegistry(self)
         self.register_custom_actions()
         self.setup_layout()
 
-        ## Set up managers for display logic (what is shown) and calculation logic
+        # Set up managers for display logic and calculation logic.
+        # DisplayManager handles the actual text area where numbers appear.
+        # CalculatorManager orchestrates multiple calculator instances (tabs),
+        # syncing the sidebar and the active view.
         self.display_manager = DisplayManager(self.display_stack)
         self.calc_manager = CalculatorManager(self, self.tab_view, self.sidebar_view, self.display_manager)
 
-        ## Connect the necessary signals for interaction
+        # Connect the necessary signals for interaction
         self.calc_manager.setup_signals(self.calc_manager)
 
         self.setup_keyboard_controller()
 
-        ## Add the first default calculator instance
+        # Add the first default calculator instance
         self.calc_manager.add_calculator_instance()
 
-        ## Apply the CSS styles on startup
+        # Apply the CSS styles on startup
         StyleManager.load_css()
 
     def setup_layout(self):
-        """Initializes the main window layout without split view for now."""
+        """Initializes the main window layout."""
         # Create a simple box to hold sidebar and content
         self.main_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
         self.set_content(self.main_box)
         
-        ## Initialize the sidebar view (hidden by default)
+        # Initialize the sidebar view (hidden by default)
         self.sidebar_view = SidebarView(self)
         self.sidebar_view.set_visible(False)
         self.main_box.append(self.sidebar_view)
 
-        ## Keep a reference to the sidebar list box
+        # Keep a reference to the sidebar list box
         self.sidebar_list = self.sidebar_view.sidebar_list
 
         self.setup_content()
@@ -60,37 +63,40 @@ class Calculator(Adw.ApplicationWindow):
         """Constructs the main content area using Adw.ToolbarView."""
         toolbar_view = Adw.ToolbarView()
 
-        ## Create and add the header bar (contains window controls and menu)
+        # Create and add the header bar.
+        # The header includes the window title, window controls (min/max/close),
+        # and the calculator mode switcher (Standard/Scientific/etc).
         self.header_view = HeaderView(self)
         toolbar_view.add_top_bar(self.header_view)
 
-        ## Main container for calculator content
+        # Main container for calculator content
         content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         content_box.set_hexpand(True)
         content_box.set_vexpand(True)
 
-        ## Container for the display area (where numbers are shown)
+        # Container for the display area (where numbers are shown)
         calc_header = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         calc_header.add_css_class("calculator-header-extension")
         calc_header.set_vexpand(True)
 
-        ## Stack to switch between different calculator displays (standard/scientific)
+        # Stack to switch between different calculator displays
         self.display_stack = Gtk.Stack()
         self.display_stack.add_css_class("calculator-display-header")
         calc_header.append(self.display_stack)
 
         content_box.append(calc_header)
 
-        ## Tab view for handling multiple open calculator instances
+        # Tab view for handling multiple open calculator instances.
+        # Each tab represents a separate calculator session with its own history and variables.
         self.tab_view = Adw.TabView()
         self.tab_view.set_vexpand(True)
         self.tab_view.set_hexpand(True)
         content_box.append(self.tab_view)
 
-        ## Set the main content of the toolbar view
+        # Set the main content of the toolbar view
         toolbar_view.set_content(content_box)
 
-        ## Add to main box
+        # Add to main box
         self.main_box.append(toolbar_view)
 
     def on_toggle_sidebar(self, button):

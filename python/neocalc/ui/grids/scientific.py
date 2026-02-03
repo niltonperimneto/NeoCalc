@@ -1,20 +1,10 @@
 # -*- coding: utf-8 -*-
-import gi
-
-gi.require_version("Gtk", "4.0")
-
-from gi.repository import Gtk
-
-from .base import CalculatorGrid
+from .base import CalculatorGrid, GridButton
 
 
 class ScientificGrid(CalculatorGrid):
     def __init__(self, calculator_window):
         super().__init__(calculator_window)
-        self.set_row_homogeneous(True)
-        self.set_column_homogeneous(True)
-
-        from .base import GridButton
 
         buttons = [
             GridButton("(", self.on_button_clicked, 0, 0),

@@ -9,14 +9,16 @@ from neocalc_backend import DisplayManager, CalculatorManager
 class CalculatorLogic:
     """
     Python wrapper for the Rust backend.
-    Now instance-based so everyone gets their own sandbox.
+    Manages calculator state and async execution.
     """
 
     def __init__(self):
 
         self._calc = neocalc_backend.Calculator()
         
-        ## Create a dedicated event loop for background tasks
+        # Create a dedicated event loop for background tasks.
+        # GTK runs its own main loop on the main thread. To avoid blocking the UI
+        # during heavy calculations, we run a separate asyncio loop in a background thread.
         self._loop = asyncio.new_event_loop()
         self._thread = threading.Thread(target=self._start_background_loop, daemon=True)
         self._thread.start()
@@ -52,14 +54,13 @@ class CalculatorLogic:
 
     def evaluate(self, current_text: str = None) -> str:
         """
-        Calling Rust instance.
+        Evaluate expression synchronously.
         """
         return self._calc.evaluate(current_text)
 
     async def evaluate_async(self, current_text: str = None) -> str:
         """
-        Async evaluation.
-        I don't know how Tokio works, but await makes it look easy.
+        Evaluate expression asynchronously to prevent blocking the UI thread.
         """
         return await self._calc.evaluate_async(current_text)
 
@@ -70,25 +71,31 @@ class CalculatorLogic:
         """
         async def _wrapper():
             try:
+                # Run the calculation in the background
                 result = await self.evaluate_async(current_text)
+                
+                # Schedule the success callback on the main GTK thread
+                # This ensures thread safety when updating the UI
                 if on_success:
                     GLib.idle_add(on_success, result)
             except Exception as e:
                 error_msg = str(e)
+                # Schedule the error callback on the main GTK thread
                 if on_error:
                     GLib.idle_add(on_error, error_msg)
         
+        # Submit the coroutine to the background loop
         asyncio.run_coroutine_threadsafe(_wrapper(), self._loop)
 
     def get_history(self) -> list:
         """
-        Asking Rust for the history.
+        Retrieve calculation history.
         """
         return self._calc.get_history()
 
     def clear_history(self) -> None:
         """
-        Telling Rust to forget everything.
+        Clear calculation history.
         """
         self._calc.clear_history()
 

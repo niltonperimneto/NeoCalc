@@ -9,6 +9,19 @@ from gi.repository import Gtk
 
 @dataclass
 class GridButton:
+    """
+    Defines the properties of a calculator button.
+    
+    Attributes:
+        label: Text displayed on the button.
+        callback: Function to call when clicked.
+        col: Grid column index.
+        row: Grid row index.
+        width: Column span (default 1).
+        height: Row span (default 1).
+        style_classes: CSS classes for styling (e.g. 'suggested-action', 'destructive-action').
+        insert_text: Specific text to insert if different from label (e.g. '×' inserts '*').
+    """
     label: str
     callback: Callable
     col: int
@@ -26,14 +39,23 @@ class CalculatorGrid(Gtk.Grid):
         super().__init__(row_spacing=1, column_spacing=1, **kwargs)
         self.calculator = calculator_window
         self.set_halign(Gtk.Align.FILL)
+        self.set_row_homogeneous(True)
+        self.set_column_homogeneous(True)
 
     def create_buttons(self, buttons: List[GridButton]):
-        """Creates buttons from a list of GridButton objects and attaches them to the grid."""
+        """
+        Dynamically generates and attaches buttons to the grid.
+        
+        This method iterates through the declarative list of Button definitions,
+        creates Gtk.Button widgets, applies styles, and connects signals.
+        """
         for btn_def in buttons:
             button = Gtk.Button(label=btn_def.label)
+            # prevent buttons from stealing focus from the display
             button.set_focusable(False)
 
             # Store insert_text on the button widget for callbacks to use
+            # This allows generic callbacks to know what text to insert
             button.insert_text = (
                 btn_def.insert_text if btn_def.insert_text else btn_def.label
             )

@@ -214,14 +214,33 @@ jobs:
           
           # Initial seed: Copy dependencies of Exe and Pyds
           echo "Seeding/Scanning initial binaries..."
-          for file in target/release/neocalc-desktop.exe /ucrt64/lib/python3.*/site-packages/gi/*.pyd; do
-             deps=$(objdump -p "$file" | grep "DLL Name" | awk '{print $3}')
-             for dep in $deps; do
-                 if [ ! -f "dist/NeoCalc/$dep" ]; then
-                     found=$(find /ucrt64/bin -maxdepth 1 -name "$dep" | head -n 1)
-                     if [ -f "$found" ]; then cp "$found" dist/NeoCalc/; fi
-                 fi
-             done
+          
+          # Find the Python version dynamically
+          PYTHON_VERSION=$(ls /ucrt64/lib/ | grep -E '^python3\.[0-9]+$' | head -n 1)
+          echo "Detected Python: $PYTHON_VERSION"
+          
+          # Scan main exe
+          if [ -f "target/release/neocalc-desktop.exe" ]; then
+              deps=$(objdump -p "target/release/neocalc-desktop.exe" | grep "DLL Name" | awk '{print $3}')
+              for dep in $deps; do
+                  if [ ! -f "dist/NeoCalc/$dep" ]; then
+                      found=$(find /ucrt64/bin -maxdepth 1 -name "$dep" 2>/dev/null | head -n 1)
+                      if [ -f "$found" ]; then cp "$found" dist/NeoCalc/; fi
+                  fi
+              done
+          fi
+          
+          # Scan PyGObject extensions if they exist
+          for file in /ucrt64/lib/$PYTHON_VERSION/site-packages/gi/*.pyd; do
+              if [ -f "$file" ]; then
+                  deps=$(objdump -p "$file" 2>/dev/null | grep "DLL Name" | awk '{print $3}')
+                  for dep in $deps; do
+                      if [ ! -f "dist/NeoCalc/$dep" ]; then
+                          found=$(find /ucrt64/bin -maxdepth 1 -name "$dep" 2>/dev/null | head -n 1)
+                          if [ -f "$found" ]; then cp "$found" dist/NeoCalc/; fi
+                      fi
+                  done
+              fi
           done
 
           echo "Starting Recursive Scan..."
@@ -230,8 +249,16 @@ jobs:
               echo "Pass $count..."
               added_new=0
               
-              # Find all needed DLLs by all current files
-              needed_dlls=$(objdump -p dist/NeoCalc/*.{exe,dll,pyd} 2>/dev/null | grep "DLL Name" | awk '{print $3}' | sort | uniq)
+              # Find all needed DLLs by all current files (handle missing file types gracefully)
+              needed_dlls=""
+              for ext in exe dll pyd; do
+                  for f in dist/NeoCalc/*.$ext; do
+                      if [ -f "$f" ]; then
+                          needed_dlls="$needed_dlls $(objdump -p "$f" 2>/dev/null | grep 'DLL Name' | awk '{print $3}')"
+                      fi
+                  done
+              done
+              needed_dlls=$(echo "$needed_dlls" | tr ' ' '\n' | sort | uniq)
               
               for need in $needed_dlls; do
                   if [ ! -f "dist/NeoCalc/$need" ]; then
@@ -276,8 +303,12 @@ jobs:
           cp -r /ucrt64/share/icons/Adwaita dist/NeoCalc/share/icons/
           cp -r /ucrt64/share/icons/hicolor dist/NeoCalc/share/icons/
           
-          # Copy Locale
-          cp -r locale dist/NeoCalc/
+          # Copy Locale (optional - may not exist)
+          if [ -d "locale" ]; then
+              cp -r locale dist/NeoCalc/
+          else
+              echo "Warning: locale directory not found, skipping..."
+          fi
           
           # Copy GDK Pixbuf Loaders (SVG Support)
           mkdir -p dist/NeoCalc/lib/gdk-pixbuf-2.0/2.10.0/loaders

@@ -26,6 +26,7 @@ class CalculatorWidget(Gtk.Box):
         self.on_expression_changed = None
         GLib.idle_add(self.update_display)
 
+        # Connect interaction signals
         key_controller = Gtk.EventControllerKey()
         key_controller.connect("key-pressed", self.on_key_pressed)
         self.add_controller(key_controller)
@@ -47,24 +48,8 @@ class CalculatorWidget(Gtk.Box):
         grid_box.set_valign(Gtk.Align.FILL)
         main_content.append(grid_box)
 
-        self.view_stack = Adw.ViewStack()
-        # Disable homogeneity so standard mode can be narrower than scientific
-        # Adw.ViewStack doesn't expose hhomogeneous directly in python bindings sometimes?
-        # It inherits from Gtk.Widget. Actually checks if it has the property using GtkStack logic equivalent.
-        # AdwViewStack is distinct from GtkStack. 
-        # Wait, AdwViewStack documentation says it adapts. 
-        # But let's assume it behaves like Stack or try to set it.
-        # If AdwViewStack doesn't have it, we might need Gtk.Stack for this behavior.
-        # Let's try checking if it works or use Gtk.Stack if Adw.ViewStack is stubborn.
-        # For now, let's try assuming Gtk.Stack behavior or switch to Gtk.Stack?
-        # Adw.ViewStack is for the bottom bar navigation usually.
-        # Here we are using it for modes.
-        # Let's try replacing Adw.ViewStack with Gtk.Stack if strictly needed, but first let's try to verify if it has properties.
-        # Actually, best guess fix: disable homogeneity if possible.
-        # Adw.ViewStack does NOT have hhomogeneous property. Gtk.Stack does.
-        # So replacing Adw.ViewStack with Gtk.Stack is the Fix if we want variable width.
-        
         self.view_stack = Gtk.Stack()
+        # Disable homogeneity to allow standard mode to be narrower than scientific
         self.view_stack.set_hhomogeneous(False)
         self.view_stack.set_vhomogeneous(False)
         self.view_stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
@@ -159,7 +144,8 @@ class CalculatorWidget(Gtk.Box):
                 self.display.set_preview("")
                 return
 
-            # Use the new preview method from the backend which respects variables
+            # Use the new preview method from the backend which respects variables.
+            # This allows seeing the result of "a + 5" where a=10 before pressing equals.
             result = self.logic.preview(text)
 
             # If result is same as input (no calc happened), hide it
@@ -178,12 +164,13 @@ class CalculatorWidget(Gtk.Box):
             return {}
 
     def on_display_edited(self, _widget, text):
+        # Update logic state when user manually types in the display
         self.logic.set_expression(text)
         if self.on_expression_changed:
             self.on_expression_changed(text)
 
     def on_display_activated(self, _widget):
-        ## Use non-blocking evaluation to keep UI responsive
+        # Use non-blocking evaluation to keep UI responsive
         self.logic.evaluate_non_blocking(
             on_success=self._on_eval_success, on_error=self._on_eval_error
         )
@@ -192,13 +179,12 @@ class CalculatorWidget(Gtk.Box):
         """Called when async evaluation completes successfully."""
         self.update_display()
         self.update_history_display()
+        # Trigger parent window to update tab title with new result or expression/result pair
         self.trigger_name_update()
 
     def _on_eval_error(self, error_msg):
         """Called when async evaluation fails."""
-        ## For now, just show the error in the display like the sync version did
-        ## (The backend usually captures errors as strings in the buffer,
-        ## but if an exception bubble up, we handle it here)
+        # Show the error in the display
         self.display.set_value("Error")
         print(f"Evaluation error: {error_msg}")
 
