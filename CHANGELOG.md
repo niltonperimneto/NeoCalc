@@ -12,3 +12,5 @@
 
 ### Build System
 - **Windows**: Fixed build failures in `binaries_build.yml` by implementing dynamic Python version detection, safer dependency scanning, and conditional locale copying.
+- **Flatpak**: Improved distribution pipeline with persistent repository, GPG signing support, delta updates, and `.flatpakrepo` file for easy installation.
+

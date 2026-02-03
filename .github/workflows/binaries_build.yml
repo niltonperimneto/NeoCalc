@@ -112,16 +112,36 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Job 5: Build Flatpak
+  # This job builds the Flatpak package and publishes it to a self-hosted repository on GitHub Pages.
+  # Users can add this repo to receive automatic updates.
   build-flatpak:
     runs-on: ubuntu-latest
     needs: [create_tag, define_version]
+    timeout-minutes: 30
     if: |
       always() && 
       (needs.create_tag.result == 'success' || (needs.create_tag.result == 'skipped' && startsWith(github.ref, 'refs/tags/v')))
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout source code
+        uses: actions/checkout@v6
         with:
           submodules: true
+      
+      - name: Checkout existing Flatpak repo from gh-pages
+        uses: actions/checkout@v6
+        with:
+          ref: gh-pages
+          path: public
+        continue-on-error: true  # First run won't have a gh-pages branch
+      
+      - name: Cache Flatpak dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.local/share/flatpak
+            .flatpak-builder
+          key: flatpak-${{ hashFiles('com.niltonperimneto.neocalc.yml') }}
+          restore-keys: flatpak-
       
       - name: Install Flatpak tools
         run: |
@@ -129,37 +149,61 @@ jobs:
           sudo apt-get install -y flatpak flatpak-builder
           flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
-      - name: Build and Export Flatpak Repo
+      - name: Build and Export Flatpak
         run: |
-
-          # Initialize repo directory
+          # Ensure repo directory exists (may have been checked out from gh-pages)
           mkdir -p public/repo
           
-          # Inject Version (Flatpak build runs in a sandbox, but sources are copied in. We modify source before build)
+          # Inject version into Python source
           echo '__version__ = "${{ needs.define_version.outputs.version }}"' > python/neocalc/_version.py
           
-          # Build and Export to Repo
-          flatpak-builder --user --install-deps-from=flathub --disable-rofiles-fuse --repo=public/repo --force-clean build-dir com.niltonperimneto.neocalc.yml
+          # Build the Flatpak and export to the persistent repository
+          flatpak-builder --user --install-deps-from=flathub --disable-rofiles-fuse \
+            --repo=public/repo --force-clean build-dir com.niltonperimneto.neocalc.yml
           
-          # Generate static deltas for efficient updates
-          flatpak build-update-repo --generate-static-deltas public/repo
-          
-          # Create single file bundle for release
+          # Create single-file bundle for direct download
           flatpak build-bundle public/repo neocalc.flatpak com.niltonperimneto.neocalc
+      
+      - name: Sign Repository (if GPG key available)
+        if: ${{ secrets.GPG_PRIVATE_KEY != '' }}
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          flatpak build-update-repo --gpg-sign=${{ secrets.GPG_KEY_ID }} \
+            --generate-static-deltas --prune --prune-depth=3 public/repo
+      
+      - name: Update Repository (unsigned)
+        if: ${{ secrets.GPG_PRIVATE_KEY == '' }}
+        run: |
+          # Generate delta updates for efficient user downloads and prune old commits
+          flatpak build-update-repo --generate-static-deltas --prune --prune-depth=3 public/repo
+      
+      - name: Generate flatpakrepo file
+        run: |
+          cat > public/neocalc.flatpakrepo << 'EOF'
+          [Flatpak Repo]
+          Title=NeoCalc
+          Url=https://niltonperimneto.github.io/neocalc-desktop/repo
+          Homepage=https://github.com/niltonperimneto/neocalc-desktop
+          Comment=Modern calculator for GNOME
+          Description=A powerful, multi-mode calculator with Scientific, Programming, and Financial modes.
+          Icon=https://raw.githubusercontent.com/niltonperimneto/neocalc-desktop/main/logo.svg
+          EOF
           
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
           folder: public
-          clean: false # Don't wipe existing repo history if possible, though 'public' is fresh here.
+          clean: false  # Preserve existing repo history
 
       - name: Release Flatpak Bundle
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.define_version.outputs.version }}
           name: Release ${{ needs.define_version.outputs.version }}
-          files: neocalc.flatpak
+          files: |
+            neocalc.flatpak
+            public/neocalc.flatpakrepo
           draft: false
           prerelease: false
         env:
