@@ -15,8 +15,8 @@
 - **Flatpak**: Improved distribution pipeline with persistent repository, GPG signing support, delta updates, and `.flatpakrepo` file for easy installation.
 
 ### Backend Improvements
-- **Safety**: Added factorial input limit (max 10,000) to prevent UI hangs.
-- **Formatting**: Improved `format_float` to trim trailing zeros and added `format_number_decimal` for decimal display mode.
-- **Cleanup**: Removed dead `DivisionByZero` error, unused `use_decimals` field, and fixed stress test warnings.
+- **Synchronization**: Updated backend submodule to latest commit (dd543a4), incorporating upstream variable scoping refactors and number formatting unification.
+- **Bindings**: Updated Python bindings (`calculator.rs`) to support the restored `use_decimals` feature and ensure compatibility with the new backend signature.
+
 
 

@@ -18,6 +18,8 @@ pub struct Calculator {
     input_buffer: Arc<Mutex<String>>,
     /// Stores variables and user-defined functions
     variables: Arc<Mutex<Context>>,
+    /// Configuration: Use decimals instead of fractions
+    use_decimals: Arc<Mutex<bool>>,
 }
 
 impl Calculator {
@@ -72,6 +74,7 @@ impl Calculator {
             history: Arc::new(Mutex::new(Vec::new())),
             input_buffer: Arc::new(Mutex::new(String::from("0"))),
             variables: Arc::new(Mutex::new(Context::new())),
+            use_decimals: Arc::new(Mutex::new(false)),
         }
     }
 
@@ -130,8 +133,10 @@ impl Calculator {
         let mut context = lock_mutex(&self.variables)?;
         let res = self.evaluate_internal(&expr_to_eval, &mut context);
 
+        let use_decimals = *self.use_decimals.lock().unwrap();
+
         let output = match &res {
-            Ok(n) => core_utils::format_number(n.clone()),
+            Ok(n) => core_utils::format_number(n.clone(), use_decimals),
             Err(e) => e.to_string(),
         };
 
@@ -170,6 +175,7 @@ impl Calculator {
         let expr_for_task = buffer_val.clone();
         let history = self.history.clone();
         let input_buffer = self.input_buffer.clone();
+        let use_decimals_arc = self.use_decimals.clone();
 
         future_into_py(py, async move {
             let res = tokio::task::spawn_blocking(move || {
@@ -179,8 +185,10 @@ impl Calculator {
             .await
             .unwrap();
 
+            let use_decimals = *use_decimals_arc.lock().unwrap();
+
             let output = match &res {
-                Ok(n) => core_utils::format_number(n.clone()),
+                Ok(n) => core_utils::format_number(n.clone(), use_decimals),
                 Err(e) => e.to_string(),
             };
 
@@ -232,8 +240,9 @@ impl Calculator {
         // So we return "...".
 
         let res = engine::evaluate(&expression, &mut context_clone);
+        let use_decimals = *self.use_decimals.lock().unwrap();
         match res {
-            Ok(n) => Ok(core_utils::format_number(n)),
+            Ok(n) => Ok(core_utils::format_number(n, use_decimals)),
             Err(_) => Ok("".to_string()),
         }
     }
@@ -243,9 +252,18 @@ impl Calculator {
         let mut result = std::collections::HashMap::new();
         for scope in &context.scopes {
             for (k, v) in scope {
-                result.insert(k.clone(), core_utils::format_number((**v).clone()));
+                // Variables always use default formatting? Or should they respect the setting?
+                // Let's respect setting for consistency.
+                let use_dec = *self.use_decimals.lock().unwrap();
+                result.insert(k.clone(), core_utils::format_number((**v).clone(), use_dec));
             }
         }
         Ok(result)
+    }
+
+    fn set_decimal_mode(&self, enabled: bool) -> PyResult<()> {
+        let mut mode = lock_mutex(&self.use_decimals)?;
+        *mode = enabled;
+        Ok(())
     }
 }
